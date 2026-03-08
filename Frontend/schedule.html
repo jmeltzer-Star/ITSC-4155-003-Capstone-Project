@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schedule | Smart Task Planner</title>
@@ -21,6 +24,19 @@
         <a href="schedule.html">Schedule</a>
       </div>
     </nav>
+
+    <section class="card">
+      <h2>Schedule Capacity</h2>
+      <div class="game-progress-wrap">
+        <div class="game-progress-bar">
+          <div id="scheduleLoadFill" class="game-progress-fill"></div>
+        </div>
+        <div class="game-progress-meta">
+          <span id="scheduleLoadPercent">0%</span>
+          <span id="scheduleLoadText">0 / 0 slots used</span>
+        </div>
+      </div>
+    </section>
 
     <section class="card">
       <h2>Generate Schedule</h2>
@@ -57,6 +73,10 @@
       <div id="scheduleOutput">
         <p>No schedule generated yet.</p>
       </div>
+    </section>
+    <section class="card">
+      <h2>Momentum Intelligence</h2>
+      <p id="scheduleSummary">Generate a schedule to see smart insights.</p>
     </section>
 
     <section class="card">

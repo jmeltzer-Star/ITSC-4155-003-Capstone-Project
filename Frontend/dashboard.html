@@ -1,12 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard | Smart Task Planner</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  
+
+
   <main class="container">
     <nav class="navbar">
       <div class="brand">
@@ -20,6 +28,11 @@
         <a href="schedule.html">Schedule</a>
       </div>
     </nav>
+
+    <div class="quote-card">
+      <h3>Momentum Quote</h3>
+      <p id="dailyQuote">Loading inspiration...</p>
+    </div>
 
     <section class="stat-grid">
       <div class="stat-card">
@@ -64,6 +77,20 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+
+    </section>
+    <section class="card">
+      <h2>Mission Progress</h2>
+      <div class="game-progress-wrap">
+        <div class="game-progress-bar">
+          <div id="progressFill" class="game-progress-fill"></div>
+        </div>
+        <div class="game-progress-meta">
+          <span id="progressPercent">0%</span>
+          <span id="progressText">0 / 0 tasks completed</span>
+        </div>
       </div>
     </section>
 

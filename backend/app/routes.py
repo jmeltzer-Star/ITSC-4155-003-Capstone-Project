@@ -3,10 +3,9 @@ from .storage import create_task, get_all_tasks, update_task, delete_task, gener
 
 api = Blueprint("api", __name__)
 
-# Serve frontend index
 @api.route("/", methods=["GET"])
 def index():
-    return send_from_directory("../../frontend", "tasks.html")
+    return send_from_directory("../../frontend", "index.html")
 
 @api.route("/dashboard.html", methods=["GET"])
 def dashboard_page():
@@ -205,3 +204,4 @@ def build_schedule():
         "message": "Schedule generated successfully.",
         "schedule": schedule
     }), 200
+

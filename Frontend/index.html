@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Momentum | Welcome</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-page">
+  <div class="auth-shell">
+    <header class="auth-topbar">
+      <div class="brand">
+        <div class="momentum-icon"></div>
+        <h1 class="logo">Momentum</h1>
+      </div>
+
+      <nav class="auth-nav">
+        <a href="#">Login</a>
+        <a href="#">Sign Up</a>
+      </nav>
+    </header>
+
+    <main class="auth-layout">
+      <section class="auth-card">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtext">Plan smarter. Move faster.</p>
+
+        <form id="fakeLoginForm" class="auth-form">
+          <label>
+            Email
+            <input type="email" placeholder="you@example.com" />
+          </label>
+
+          <label>
+            Password
+            <input type="password" placeholder="Enter your password" />
+          </label>
+
+          <button type="submit" class="auth-submit-btn">Login</button>
+        </form>
+
+        <p class="auth-footer-text">
+          Don’t have an account yet? <a href="#">Sign up</a>
+        </p>
+      </section>
+
+      <section class="auth-hero">
+        <div class="auth-hero-glow"></div>
+        <div class="auth-hero-content">
+          <div class="hero-icon-wrap">
+            <div class="momentum-icon auth-big-icon"></div>
+          </div>
+          <h2>Build Better Momentum</h2>
+          <p>
+            Organize tasks, generate schedules, and stay focused with a clean,
+            intelligent planner built for steady progress.
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const fakeLoginForm = document.getElementById("fakeLoginForm");
+
+    if (fakeLoginForm) {
+      fakeLoginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        window.location.href = "dashboard.html";
+      });
+    }
+  </script>
+</body>
+</html>

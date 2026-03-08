@@ -18,6 +18,10 @@ const editDurationMinutes = document.getElementById("editDurationMinutes");
 const editEffortLevel = document.getElementById("editEffortLevel");
 const editStartAfter = document.getElementById("editStartAfter");
 const editCategory = document.getElementById("editCategory");
+const scheduleLoadFill = document.getElementById("scheduleLoadFill");
+const scheduleLoadPercent = document.getElementById("scheduleLoadPercent");
+const scheduleLoadText = document.getElementById("scheduleLoadText");
+const scheduleSummary = document.getElementById("scheduleSummary");
 
 // Store original task values so we can compare after edit
 let originalTaskData = null;
@@ -28,6 +32,8 @@ function formatForBackend(datetimeLocalValue) {
     ? datetimeLocalValue.replace("T", " ")
     : datetimeLocalValue;
 }
+
+
 
 function parseDateInput(value) {
   if (!value) return null;
@@ -65,11 +71,11 @@ function validateFutureDate(inputValue, inlineMsgEl) {
   return true;
 }
 
-function clearCreateMessageAfterDelay() {
+function clearCreateMessageAfterDelay(delay = 5000) {
   setTimeout(() => {
     msg.textContent = "";
     msg.className = "message";
-  }, 5000);
+  }, delay);
 }
 
 function clearEditMessageAfterDelay() {
@@ -104,6 +110,62 @@ async function fetchTasks() {
   }
 }
 
+function generateScheduleSummary(schedule) {
+  if (!scheduleSummary) return;
+
+  const allTasks = Object.values(schedule).flat();
+  const totalTasks = allTasks.length;
+  const totalDaysUsed = Object.keys(schedule).filter(day => schedule[day].length > 0).length;
+
+  if (!totalTasks) {
+    scheduleSummary.textContent = "No schedule insights are available because no tasks were scheduled.";
+    return;
+  }
+
+  const highPriorityCount = allTasks.filter(task => task.priority === "High").length;
+  const highEffortCount = allTasks.filter(task => task.effort_level === "High").length;
+
+  let busiestDayCount = 0;
+  Object.values(schedule).forEach(dayTasks => {
+    if (dayTasks.length > busiestDayCount) {
+      busiestDayCount = dayTasks.length;
+    }
+  });
+
+  const summaries = [];
+
+  if (highPriorityCount > 0) {
+    summaries.push("This schedule focuses on urgent tasks first.");
+  }
+
+  if (highEffortCount > 0) {
+    summaries.push("High-effort tasks are placed earlier where possible.");
+  }
+
+  if (totalDaysUsed >= 2) {
+    summaries.push("Your workload is spread across multiple days for better balance.");
+  } else {
+    summaries.push("Your workload is concentrated into a short time window.");
+  }
+
+  if (busiestDayCount >= 4) {
+    summaries.push("One or more days are heavily loaded, so consider increasing the schedule range if needed.");
+  } else if (busiestDayCount >= 2) {
+    summaries.push("Your workload is moderately balanced this week.");
+  } else {
+    summaries.push("Your current schedule load is light and manageable.");
+  }
+
+  scheduleSummary.textContent = summaries.join(" ");
+}
+
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function renderTasks(tasks) {
   tbody.innerHTML = "";
 
@@ -121,37 +183,42 @@ function renderTasks(tasks) {
     row.dataset.taskId = task.id;
 
     let statusClass = "status-pending";
-if (task.status === "In Progress") statusClass = "status-progress";
-if (task.status === "Completed") statusClass = "status-completed";
+    if (task.status === "In Progress") statusClass = "status-progress";
+    if (task.status === "Completed") statusClass = "status-completed";
 
-let priorityClass = "priority-low";
-if (task.priority === "High") priorityClass = "priority-high";
-if (task.priority === "Medium") priorityClass = "priority-medium";
+    if (task.status === "Completed") {
+      row.classList.add("task-completed-row");
+    }
 
-const formattedStartAfter = task.start_after
-  ? task.start_after
-  : "No restriction";
+    let priorityClass = "priority-low";
+    if (task.priority === "High") priorityClass = "priority-high";
+    if (task.priority === "Medium") priorityClass = "priority-medium";
 
-row.innerHTML = `
-  <td>
-    <div class="task-title-cell">
-      <div class="task-main-title">${task.title}</div>
-      <div class="task-meta">
-        <span class="task-meta-pill">${task.category}</span>
-        <span class="task-meta-pill">${task.duration_minutes} min</span>
-        <span class="task-meta-pill">${task.effort_level} Effort</span>
-        <span class="task-meta-pill">Start: ${formattedStartAfter}</span>
-      </div>
-    </div>
-  </td>
-  <td><span class="status-badge ${statusClass}">${task.status}</span></td>
-  <td>${task.due_date}</td>
-  <td><span class="priority-pill ${priorityClass}">${task.priority}</span></td>
-  <td>
-    <button type="button" class="edit-btn">Edit</button>
-    <button type="button" class="delete-btn">Delete</button>
-  </td>
-`;
+    const formattedStartAfter = task.start_after
+      ? task.start_after
+      : "No restriction";
+
+    row.innerHTML = `
+      <td>
+        <div class="task-title-cell">
+          <div class="task-main-title">${task.title}</div>
+          <div class="task-meta">
+            <span class="task-meta-pill">${task.category}</span>
+            <span class="task-meta-pill">${task.duration_minutes} min</span>
+            <span class="task-meta-pill">${task.effort_level} Effort</span>
+            <span class="task-meta-pill">Start: ${formattedStartAfter}</span>
+          </div>
+        </div>
+      </td>
+      <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+      <td>${task.due_date}</td>
+      <td><span class="priority-pill ${priorityClass}">${task.priority}</span></td>
+      <td class="actions-cell">
+      <button type="button" class="edit-btn">Edit</button>
+      <button type="button" class="delete-btn">Delete</button>
+      ${task.status !== "Completed" ? '<button type="button" class="complete-btn">Complete</button>' : ""}
+      </td>
+    `;
 
     row.querySelector(".edit-btn").addEventListener("click", () => {
       openEditForm(task);
@@ -161,9 +228,124 @@ row.innerHTML = `
       handleDeleteTask(task.id, task.title);
     });
 
+    const completeBtn = row.querySelector(".complete-btn");
+    if (completeBtn) {
+      completeBtn.addEventListener("click", () => {
+        markTaskComplete(task);
+      });
+    }
+
     tbody.appendChild(row);
   });
 }
+
+async function markTaskComplete(task) {
+  const previousStatus = task.status;
+
+  try {
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: task.title,
+        due_date: task.due_date,
+        priority: task.priority,
+        status: "Completed",
+        duration_minutes: task.duration_minutes,
+        effort_level: task.effort_level,
+        start_after: task.start_after,
+        category: task.category
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (msg) {
+        msg.textContent = data.error || "Failed to mark task as completed.";
+        msg.className = "message error";
+        clearCreateMessageAfterDelay();
+      }
+      return;
+    }
+
+    await fetchTasks();
+    await loadDashboard();
+
+    if (msg) {
+      msg.className = "message success";
+      msg.innerHTML = `
+        Task marked as completed.
+        <a href="#" id="undoCompleteLink">Undo</a>
+      `;
+    }
+
+    const undoLink = document.getElementById("undoCompleteLink");
+    if (undoLink) {
+      undoLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await undoCompleteTask(task, previousStatus);
+      });
+    }
+
+    clearCreateMessageAfterDelay();
+  } catch (err) {
+    console.error(err);
+
+    if (msg) {
+      msg.textContent = "Failed to mark task as completed.";
+      msg.className = "message error";
+      clearCreateMessageAfterDelay();
+    }
+  }
+}
+
+async function undoCompleteTask(task, previousStatus = "Pending") {
+  try {
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: task.title,
+        due_date: task.due_date,
+        priority: task.priority,
+        status: previousStatus,
+        duration_minutes: task.duration_minutes,
+        effort_level: task.effort_level,
+        start_after: task.start_after,
+        category: task.category
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (msg) {
+        msg.textContent = data.error || "Failed to undo completion.";
+        msg.className = "message error";
+        clearCreateMessageAfterDelay();
+      }
+      return;
+    }
+
+    if (msg) {
+      msg.textContent = "Task restored.";
+      msg.className = "message success";
+      clearCreateMessageAfterDelay();
+    }
+
+    await fetchTasks();
+    loadDashboard();
+  } catch (err) {
+    console.error(err);
+    if (msg) {
+      msg.textContent = "Failed to undo completion.";
+      msg.className = "message error";
+      clearCreateMessageAfterDelay();
+    }
+  }
+}
+
 
 // Highlight only the fields that changed after edit
 function highlightUpdatedFields(id, updatedTask) {
@@ -273,6 +455,28 @@ if (form) {
       console.error(err);
     }
   });
+}
+
+function updateScheduleLoad(schedule) {
+  if (!scheduleLoadFill || !scheduleLoadPercent || !scheduleLoadText) return;
+
+  const selectedDays = scheduleRange ? Number(scheduleRange.value) : 7;
+  const maxPerDay = maxTasksPerDay ? Number(maxTasksPerDay.value) : 4;
+
+  const totalSlots = selectedDays * maxPerDay;
+
+  let scheduledCount = 0;
+  Object.values(schedule).forEach(dayTasks => {
+    scheduledCount += dayTasks.length;
+  });
+
+  const loadPercent = totalSlots > 0
+    ? Math.round((scheduledCount / totalSlots) * 100)
+    : 0;
+
+  scheduleLoadFill.style.width = `${loadPercent}%`;
+  scheduleLoadPercent.textContent = `${loadPercent}%`;
+  scheduleLoadText.textContent = `${scheduledCount} / ${totalSlots} slots used`;
 }
 
 // ---------- Edit Task ----------
@@ -448,7 +652,7 @@ function renderSchedule(schedule) {
 
   const selectedDays = scheduleRange ? Number(scheduleRange.value) : 7;
   const today = new Date();
-  const todayString = today.toISOString().split("T")[0];
+  const todayString = formatLocalDateKey(today);
 
   scheduleOutput.innerHTML = '<div class="schedule-grid"></div>';
   const grid = scheduleOutput.querySelector(".schedule-grid");
@@ -459,7 +663,7 @@ function renderSchedule(schedule) {
     const currentDate = new Date();
     currentDate.setDate(today.getDate() + i);
 
-    const dayKey = currentDate.toISOString().split("T")[0];
+    const dayKey = formatLocalDateKey(currentDate);
     const tasksForDay = schedule[dayKey] || [];
 
     const dayCard = document.createElement("div");
@@ -499,31 +703,27 @@ function renderSchedule(schedule) {
       let statusClass = "status-pending";
       if (task.status === "In Progress") statusClass = "status-progress";
       if (task.status === "Completed") statusClass = "status-completed";
-    
+
       let priorityClass = "priority-low";
       if (task.priority === "High") priorityClass = "priority-high";
       if (task.priority === "Medium") priorityClass = "priority-medium";
-    
+
       const taskCard = document.createElement("div");
       taskCard.className = "schedule-task";
 
-      
-
-   
-
       taskCard.innerHTML = `
-  <div class="calendar-task-time">${task.scheduled_start} – ${task.scheduled_end}</div>
-  <div class="calendar-task-title">${task.title}</div>
-  <div class="calendar-task-meta">
-    <span class="status-badge ${statusClass}">${task.status}</span>
-    <span class="priority-pill ${priorityClass}">${task.priority} Priority</span>
-    <span class="task-meta-pill">${task.effort_level} Effort</span>
-    <span class="task-meta-pill">${task.category}</span>
-  </div>
-  <div class="due-meta" style="margin-top:10px;">
-    Due: ${task.due_date}
-  </div>
-`;
+        <div class="calendar-task-time">${task.scheduled_start} – ${task.scheduled_end}</div>
+        <div class="calendar-task-title">${task.title}</div>
+        <div class="calendar-task-meta">
+          <span class="status-badge ${statusClass}">${task.status}</span>
+          <span class="priority-pill ${priorityClass}">${task.priority} Priority</span>
+          <span class="task-meta-pill">${task.effort_level} Effort</span>
+          <span class="task-meta-pill">${task.category}</span>
+        </div>
+        <div class="due-meta" style="margin-top:10px;">
+          Due: ${task.due_date}
+        </div>
+      `;
 
       dayCard.appendChild(taskCard);
     });
@@ -534,6 +734,22 @@ function renderSchedule(schedule) {
   if (!hasAnyTasks) {
     scheduleMessage.textContent = "No tasks available to schedule.";
     scheduleMessage.className = "message error";
+  }
+}
+
+async function loadQuote() {
+  const quoteEl = document.getElementById("dailyQuote");
+
+  if (!quoteEl) return;
+
+  try {
+    const res = await fetch("https://api.quotable.io/random");
+    const data = await res.json();
+
+    quoteEl.textContent = `"${data.content}" — ${data.author}`;
+  } catch (err) {
+    console.error(err);
+    quoteEl.textContent = "Stay focused. Keep building momentum.";
   }
 }
 
@@ -558,17 +774,37 @@ async function handleGenerateSchedule() {
     if (!res.ok) {
       scheduleMessage.textContent = data.error || "Failed to generate schedule.";
       scheduleMessage.className = "message error";
+
+      if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+      if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+      if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+      if (scheduleSummary) {
+        scheduleSummary.textContent = "Unable to generate schedule insights right now.";
+      }
+
       return;
     }
 
     scheduleMessage.textContent = data.message || "Schedule generated successfully.";
     scheduleMessage.className = "message success";
 
-    renderSchedule(data.schedule || {});
+    const scheduleData = data.schedule || {};
+
+    renderSchedule(scheduleData);
+    updateScheduleLoad(scheduleData);
+    generateScheduleSummary(scheduleData);
   } catch (err) {
+    console.error(err);
+
     scheduleMessage.textContent = "Failed to generate schedule.";
     scheduleMessage.className = "message error";
-    console.error(err);
+
+    if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+    if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+    if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+    if (scheduleSummary) {
+      scheduleSummary.textContent = "Unable to generate schedule insights right now.";
+    }
   }
 }
 
@@ -581,21 +817,44 @@ const totalTasksEl = document.getElementById("totalTasks");
 const pendingTasksEl = document.getElementById("pendingTasks");
 const completedTasksEl = document.getElementById("completedTasks");
 const recentTasksBody = document.getElementById("recentTasksBody");
+const progressFill = document.getElementById("progressFill");
+const progressPercent = document.getElementById("progressPercent");
+const progressText = document.getElementById("progressText");
 
 async function loadDashboard() {
   if (!totalTasksEl || !pendingTasksEl || !completedTasksEl || !recentTasksBody) return;
 
   try {
-    const res = await fetch("/api/tasks");
+    const res = await fetch("/api/tasks?sort=date");
     const tasks = await res.json();
 
     if (!res.ok) {
       throw new Error(tasks.error || "Failed to load dashboard data.");
     }
 
-    totalTasksEl.textContent = tasks.length;
-    pendingTasksEl.textContent = tasks.filter(t => t.status !== "Completed").length;
-    completedTasksEl.textContent = tasks.filter(t => t.status === "Completed").length;
+    const totalTasks = tasks.length;
+    const pendingCount = tasks.filter(t => t.status !== "Completed").length;
+    const completedCount = tasks.filter(t => t.status === "Completed").length;
+
+    totalTasksEl.textContent = totalTasks;
+    pendingTasksEl.textContent = pendingCount;
+    completedTasksEl.textContent = completedCount;
+
+    const completionPercent = totalTasks > 0
+      ? Math.round((completedCount / totalTasks) * 100)
+      : 0;
+
+    if (progressFill) {
+      progressFill.style.width = `${completionPercent}%`;
+    }
+
+    if (progressPercent) {
+      progressPercent.textContent = `${completionPercent}%`;
+    }
+
+    if (progressText) {
+      progressText.textContent = `${completedCount} / ${totalTasks} tasks completed`;
+    }
 
     recentTasksBody.innerHTML = "";
 
@@ -615,23 +874,65 @@ async function loadDashboard() {
       if (task.status === "In Progress") statusClass = "status-progress";
       if (task.status === "Completed") statusClass = "status-completed";
 
+      let priorityClass = "priority-low";
+      if (task.priority === "High") priorityClass = "priority-high";
+      if (task.priority === "Medium") priorityClass = "priority-medium";
+
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${task.title}</td>
         <td><span class="status-badge ${statusClass}">${task.status}</span></td>
         <td>${task.due_date}</td>
-        <td>${task.priority}</td>
+        <td><span class="priority-pill ${priorityClass}">${task.priority}</span></td>
       `;
       recentTasksBody.appendChild(row);
     });
   } catch (err) {
     console.error(err);
-    recentTasksBody.innerHTML = `
-      <tr>
-        <td colspan="4">Failed to load dashboard data.</td>
-      </tr>
-    `;
+
+    if (recentTasksBody) {
+      recentTasksBody.innerHTML = `
+        <tr>
+          <td colspan="4">Failed to load dashboard data.</td>
+        </tr>
+      `;
+    }
+
+    if (progressFill) {
+      progressFill.style.width = "0%";
+    }
+
+    if (progressPercent) {
+      progressPercent.textContent = "0%";
+    }
+
+    if (progressText) {
+      progressText.textContent = "Unable to load progress";
+    }
   }
+}
+
+
+
+function closeIntroOverlay() {
+  if (!introOverlay) return;
+  introOverlay.classList.add("fade-out");
+
+  setTimeout(() => {
+    introOverlay.remove();
+  }, 900);
+}
+
+if (introContinueBtn) {
+  introContinueBtn.addEventListener("click", closeIntroOverlay);
+}
+
+if (introOverlay) {
+  setTimeout(() => {
+    if (document.body.contains(introOverlay)) {
+      closeIntroOverlay();
+    }
+  }, 5000);
 }
 
 
@@ -642,3 +943,4 @@ if (tbody && sortSelect) {
 }
 
 loadDashboard();
+loadQuote();
