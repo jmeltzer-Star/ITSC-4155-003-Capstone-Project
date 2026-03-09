@@ -3,7 +3,7 @@ const msg = document.getElementById("message");
 const tbody = document.getElementById("taskTableBody");
 const sortSelect = document.getElementById("sortSelect");
 
-// Edit form elements
+//This is what Connects to Our HTML( Edit, Schedule,etc..) -- All the functions in this JS file, the functions in this file.
 const editSection = document.getElementById("editTaskSection");
 const editForm = document.getElementById("editTaskForm");
 const editTaskId = document.getElementById("editTaskId");
@@ -26,12 +26,58 @@ const scheduleSummary = document.getElementById("scheduleSummary");
 // Store original task values so we can compare after edit
 let originalTaskData = null;
 
-// ---------- Helpers ----------
+//Method which formats our Backend Data into the Format Which we See On Our Schedule and Task List 
 function formatForBackend(datetimeLocalValue) {
   return datetimeLocalValue.includes("T")
     ? datetimeLocalValue.replace("T", " ")
     : datetimeLocalValue;
 }
+
+/* 
+
+Feature: Date Parsing and Future Date Validation
+
+Purpose
+
+Handles task due date validation by converting user input into a JavaScript Date object and ensuring the selected date is valid and in the future before allowing a task to be created or updated.
+
+Function #1: parseDateInput()
+
+Purpose:
+Converts a date string from a form input into a usable JavaScript Date object.
+
+What it handles:
+	•	Supports HTML datetime-local inputs (format includes "T")
+	•	Extracts year, month, day, hour, and minute
+	•	Returns a properly formatted Date object
+	•	Returns null if no value is provided
+
+
+
+Function: validateFutureDate()
+
+Purpose:
+Ensures that the user selects a valid due date that is in the future before submitting a task.
+
+Validation Checks
+	1.	Ensures the field is not empty
+	2.	Ensures the date format is valid
+	3.	Ensures the selected date is later than the current time
+
+User Feedback
+If validation fails, an inline error message is shown next to the input field.
+
+Possible Messages
+	•	"Required"
+	•	"Invalid date"
+	•	"Due date must be in the future."
+
+
+
+
+
+
+*/
 
 
 
@@ -47,6 +93,36 @@ function parseDateInput(value) {
 
   return new Date(value);
 }
+
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+
+
+/*
+========================================================
+User Story #59 – Overdue Task Highlighting
+
+As a user, I want overdue tasks to be visually highlighted
+so that I can easily identify tasks that require immediate attention.
+
+Implementation:
+This logic checks task due dates when rendering tasks.
+If a task's due date is earlier than the current date and
+the task is not completed, a visual highlight is applied
+to the task row.
+
+UI Result:
+Overdue tasks appear visually distinct in the Task Log.
+========================================================
+*/
+
+
+
 
 function validateFutureDate(inputValue, inlineMsgEl) {
   inlineMsgEl.textContent = "";
@@ -70,6 +146,42 @@ function validateFutureDate(inputValue, inlineMsgEl) {
 
   return true;
 }
+
+/* 
+
+Purpose
+
+Handles temporary success and error messages shown to the user after actions such as creating or editing tasks. Messages automatically disappear after a short delay to keep the interface clean.
+
+⸻
+
+Function: clearCreateMessageAfterDelay()
+
+Purpose
+
+Automatically clears the task creation message after a specified amount of time.
+
+How It Works
+	•	Uses setTimeout() to wait a specified number of milliseconds.
+	•	After the delay:
+	•	The message text is cleared.
+	•	The message styling is reset to the default "message" class.
+
+
+Function: clearEditMessageAfterDelay()
+
+Purpose
+
+Automatically clears the task editing message after a short delay.
+
+How It Works
+	•	Uses setTimeout() to wait 5 seconds.
+	•	Clears the edit message text and resets the message styling.
+
+Example Use Case
+
+
+*/ 
 
 function clearCreateMessageAfterDelay(delay = 5000) {
   setTimeout(() => {
@@ -109,6 +221,38 @@ async function fetchTasks() {
     console.error(err);
   }
 }
+
+
+/*
+========================================================
+Feature: AI Schedule Insights / Schedule Summary
+
+Purpose:
+This function analyzes the generated schedule and produces a short,
+human-readable summary explaining scheduling decisions.
+
+What it evaluates:
+- Total number of scheduled tasks
+- Number of days used in the schedule
+- Number of high priority tasks
+- Number of high effort tasks
+- Busiest day workload
+
+Based on these metrics, the system generates insights such as:
+- prioritizing urgent tasks
+- scheduling high effort tasks earlier
+- spreading workload across days
+- identifying heavy workload days
+
+Result:
+A short summary is displayed in the UI to help the user understand
+their generated schedule.
+========================================================
+*/
+
+
+
+
 
 function generateScheduleSummary(schedule) {
   if (!scheduleSummary) return;
@@ -159,12 +303,7 @@ function generateScheduleSummary(schedule) {
   scheduleSummary.textContent = summaries.join(" ");
 }
 
-function formatLocalDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+
 
 function renderTasks(tasks) {
   tbody.innerHTML = "";
@@ -238,6 +377,32 @@ function renderTasks(tasks) {
     tbody.appendChild(row);
   });
 }
+
+
+
+/*
+========================================================
+Feature: Task Completion System
+
+User Story:
+
+
+Description:
+This function updates a task's status to "Completed" by sending
+a PUT request to the backend API. After completion:
+
+1. The task is updated in the database.
+2. The task list refreshes to reflect the new status.
+3. Dashboard statistics are updated.
+4. A success message appears with an option to undo the action.
+
+If the user clicks "Undo", the system restores the task to its
+previous status.
+========================================================
+*/
+
+
+
 
 async function markTaskComplete(task) {
   const previousStatus = task.status;
@@ -347,7 +512,47 @@ async function undoCompleteTask(task, previousStatus = "Pending") {
 }
 
 
-// Highlight only the fields that changed after edit
+/*
+========================================================
+Feature: Visual Task Update Highlighting
+
+User Story:
+As a user, I want to clearly see what fields changed after
+editing a task so that I can quickly identify the updates
+that were applied.
+
+Description:
+This function compares the updated task values with the
+original task data and visually highlights any fields that
+were modified.
+
+How it works:
+1. Finds the task row in the Task Log using the task ID.
+2. Compares each updated field with the original task values.
+3. If a value changed, the corresponding table cell receives
+   the CSS class "updated-field".
+4. The entire row temporarily receives the class "updated-row"
+   to draw attention to the update.
+5. After 2.5 seconds, all highlight styling is automatically
+   removed.
+
+Fields Checked:
+- Title
+- Status
+- Due date
+- Priority
+- Duration
+- Effort level
+- Start restriction
+- Category
+
+Result:
+Users receive immediate visual feedback showing which
+task information was changed.
+========================================================
+*/
+
+
 function highlightUpdatedFields(id, updatedTask) {
   const row = document.querySelector(`tr[data-task-id="${id}"]`);
   if (!row || !originalTaskData) return;
@@ -457,6 +662,10 @@ if (form) {
   });
 }
 
+
+
+
+
 function updateScheduleLoad(schedule) {
   if (!scheduleLoadFill || !scheduleLoadPercent || !scheduleLoadText) return;
 
@@ -479,7 +688,31 @@ function updateScheduleLoad(schedule) {
   scheduleLoadText.textContent = `${scheduledCount} / ${totalSlots} slots used`;
 }
 
-// ---------- Edit Task ----------
+/*
+========================================================
+Feature: Edit Task
+
+User Story:
+As a user, I want to edit existing tasks so that
+I can update task information when plans change.
+
+Description:
+This event listener handles submission of the
+task editing form.
+
+Workflow:
+1. Prevents default form submission.
+2. Collects updated task values from the form.
+3. Validates required fields and due date.
+4. Sends a PUT request to update the task.
+5. Refreshes the task list.
+6. Highlights the fields that were updated.
+
+Result:
+The user receives immediate visual feedback
+showing which fields changed.
+========================================================
+*/
 function openEditForm(task) {
   editSection.style.display = "block";
 
@@ -511,6 +744,30 @@ function closeEditForm() {
   editDueDateMsg.textContent = "";
   originalTaskData = null;
 }
+
+
+/*
+========================================================
+Feature: Delete Task
+
+User Story:
+As a user, I want to delete tasks I no longer need
+so that my task list stays clean and relevant.
+
+Description:
+This function handles task deletion when the user clicks
+the "Delete" button in the Task Log.
+
+How it works:
+1. Prompts the user with a confirmation dialog.
+2. Sends a DELETE request to the backend API.
+3. If successful, refreshes the task list.
+4. Displays a temporary success or error message.
+
+Safety:
+A confirmation popup prevents accidental deletion.
+========================================================
+*/
 
 async function handleDeleteTask(taskId, taskTitle) {
   const confirmed = window.confirm(`Are you sure you want to delete "${taskTitle}"?`);
@@ -640,12 +897,38 @@ if (sortSelect) {
   sortSelect.addEventListener("change", fetchTasks);
 }
 
-// ---------- Schedule Generation ----------
+// ---------- Schedule Generation Variables ----------
 const generateScheduleBtn = document.getElementById("generateScheduleBtn");
 const scheduleMessage = document.getElementById("scheduleMessage");
 const scheduleOutput = document.getElementById("scheduleOutput");
 const scheduleRange = document.getElementById("scheduleRange");
 const maxTasksPerDay = document.getElementById("maxTasksPerDay");
+
+
+
+/*
+========================================================
+Function: Render Schedule
+
+Purpose:
+Displays the generated schedule on the calendar view.
+
+What it does:
+1. Creates a visual card for each day in the schedule.
+2. Displays scheduled tasks with time ranges.
+3. Shows priority, effort level, and status.
+4. Marks today's schedule visually.
+5. Displays empty messages for days without tasks.
+
+Result:
+Users can easily see how their tasks are distributed
+across the upcoming days.
+========================================================
+*/
+
+
+
+
 
 function renderSchedule(schedule) {
   if (!scheduleOutput) return;
