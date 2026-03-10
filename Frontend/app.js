@@ -971,6 +971,16 @@ function renderSchedule(schedule) {
     const dayKey = formatLocalDateKey(currentDate);
     const tasksForDay = schedule[dayKey] || [];
 
+	const conflicts = detectScheduleConflicts(tasksForDay);
+	  
+	const conflictOutput = document.getElementById("conflictOutput");
+	
+	if (conflicts.size > 0 && conflictOutput) {
+	  conflictOutput.innerHTML = "<p>⚠ Schedule conflict detected.</p>";
+	} else if (conflictOutput) {
+	  conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
+	}
+
     const dayCard = document.createElement("div");
     dayCard.className = "schedule-day";
 
