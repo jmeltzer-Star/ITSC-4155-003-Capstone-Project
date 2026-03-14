@@ -22,6 +22,8 @@ const scheduleLoadFill = document.getElementById("scheduleLoadFill");
 const scheduleLoadPercent = document.getElementById("scheduleLoadPercent");
 const scheduleLoadText = document.getElementById("scheduleLoadText");
 const scheduleSummary = document.getElementById("scheduleSummary");
+const introOverlay = document.getElementById("introOverlay");
+const introContinueBtn = document.getElementById("introContinueBtn");
 
 // Store original task values so we can compare after edit
 let originalTaskData = null;
@@ -457,6 +459,7 @@ async function markTaskComplete(task) {
     }
 
     await fetchTasks();
+    
     await loadDashboard();
 
     if (msg) {
@@ -523,6 +526,7 @@ async function undoCompleteTask(task, previousStatus = "Pending") {
 
     await fetchTasks();
     loadDashboard();
+    await refreshScheduleView();
   } catch (err) {
     console.error(err);
     if (msg) {
@@ -674,7 +678,10 @@ if (form) {
       msg.textContent = "✓ Task created successfully!";
       msg.className = "message success";
 
+      //Acceptance Critera #1: Auto efresh
+
       await fetchTasks();
+      await refreshScheduleView();
       clearCreateMessageAfterDelay();
     } catch (err) {
       msg.textContent = "Failed to create task.";
@@ -816,6 +823,7 @@ async function handleDeleteTask(taskId, taskTitle) {
     msg.className = "message success";
 
     await fetchTasks();
+    await refreshScheduleView();
     clearCreateMessageAfterDelay();
   } catch (err) {
     msg.textContent = "Task could not be deleted.";
@@ -896,6 +904,7 @@ if (editForm) {
       };
 
       await fetchTasks();
+      await refreshScheduleView();
       highlightUpdatedFields(id, updatedTask);
       clearEditMessageAfterDelay();
 
@@ -959,6 +968,23 @@ function renderSchedule(schedule) {
   const today = new Date();
   const todayString = formatLocalDateKey(today);
 
+  const allConflicts = detectAllScheduleConflicts(schedule);
+  const conflictingTaskIds = new Set();
+
+  allConflicts.forEach(conflict => {
+    conflictingTaskIds.add(conflict.firstTaskId);
+    conflictingTaskIds.add(conflict.secondTaskId);
+  });
+
+  const conflictOutput = document.getElementById("conflictOutput");
+  if (conflictOutput) {
+    if (allConflicts.length > 0) {
+      conflictOutput.innerHTML = `<p class="message error">⚠ Schedule conflict detected.</p>`;
+    } else {
+      conflictOutput.innerHTML = `<p>No conflicts detected.</p>`;
+    }
+  }
+
   scheduleOutput.innerHTML = '<div class="schedule-grid"></div>';
   const grid = scheduleOutput.querySelector(".schedule-grid");
 
@@ -971,16 +997,6 @@ function renderSchedule(schedule) {
     const dayKey = formatLocalDateKey(currentDate);
     const tasksForDay = schedule[dayKey] || [];
 
-	const conflicts = detectScheduleConflicts(tasksForDay);
-	  
-	const conflictOutput = document.getElementById("conflictOutput");
-	
-	if (conflicts.size > 0 && conflictOutput) {
-	  conflictOutput.innerHTML = "<p>⚠ Schedule conflict detected.</p>";
-	} else if (conflictOutput) {
-	  conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
-	}
-
     const dayCard = document.createElement("div");
     dayCard.className = "schedule-day";
 
@@ -990,9 +1006,7 @@ function renderSchedule(schedule) {
 
     const heading = document.createElement("h3");
     heading.innerHTML = `
-      ${currentDate.toLocaleDateString(undefined, {
-        weekday: "long"
-      })}
+      ${currentDate.toLocaleDateString(undefined, { weekday: "long" })}
       <span class="schedule-day-date">
         ${currentDate.toLocaleDateString(undefined, {
           month: "short",
@@ -1023,21 +1037,15 @@ function renderSchedule(schedule) {
       if (task.priority === "High") priorityClass = "priority-high";
       if (task.priority === "Medium") priorityClass = "priority-medium";
 
-    const taskCard = document.createElement("div");
-	taskCard.className = "schedule-task";
-	
-	if (conflicts.has(task.id)) {
-		taskCard.classList.add("conflict-task");
-		
-		  const label = document.createElement("div");
-		  label.className = "conflict-label";
-		  label.textContent = "CONFLICT";
-		
-		  taskCard.appendChild(label);
-		}
+      const taskCard = document.createElement("div");
+      taskCard.className = "schedule-task";
 
-		
+      if (conflictingTaskIds.has(task.id)) {
+        taskCard.classList.add("conflict-task");
+      }
+
       taskCard.innerHTML = `
+        ${conflictingTaskIds.has(task.id) ? '<div class="conflict-label">CONFLICT</div>' : ""}
         <div class="calendar-task-time">${task.scheduled_start} – ${task.scheduled_end}</div>
         <div class="calendar-task-title">${task.title}</div>
         <div class="calendar-task-meta">
@@ -1076,6 +1084,181 @@ async function loadQuote() {
   } catch (err) {
     console.error(err);
     quoteEl.textContent = "Stay focused. Keep building momentum.";
+  }
+}
+
+async function refreshScheduleView() {
+  if (!scheduleOutput) return;
+
+  const days = scheduleRange ? Number(scheduleRange.value) : 7;
+  const max_tasks_per_day = maxTasksPerDay ? Number(maxTasksPerDay.value) : 4;
+
+  try {
+    const res = await fetch("/api/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days, max_tasks_per_day })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (scheduleMessage) {
+        scheduleMessage.textContent = data.error || "Failed to refresh schedule.";
+        scheduleMessage.className = "message error";
+      }
+
+      if (scheduleOutput) {
+        scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+      }
+
+      if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+      if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+      if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+      if (scheduleSummary) {
+        scheduleSummary.textContent = "No schedule insights are available.";
+      }
+      if (conflictOutput) {
+        conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
+      }
+
+      return;
+    }
+
+    const scheduleData = data.schedule || {};
+
+    const hasScheduledTasks = Object.values(scheduleData).some(day => day.length > 0);
+
+    if (!hasScheduledTasks) {
+      scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+
+      if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+      if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+      if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+      if (scheduleSummary) {
+        scheduleSummary.textContent = "No schedule insights are available because no tasks were scheduled.";
+      }
+      if (conflictOutput) {
+        conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
+      }
+
+      return;
+    }
+
+    renderSchedule(scheduleData);
+    updateScheduleLoad(scheduleData);
+    generateScheduleSummary(scheduleData);
+
+    const conflicts = detectAllScheduleConflicts(scheduleData);
+    renderConflictAlerts(conflicts);
+  } catch (err) {
+    console.error(err);
+
+    if (scheduleMessage) {
+      scheduleMessage.textContent = "Failed to refresh schedule.";
+      scheduleMessage.className = "message error";
+    }
+
+    if (scheduleOutput) {
+      scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+    }
+  }
+}
+
+async function refreshScheduleView() {
+  if (!scheduleOutput) return;
+
+  const savedGenerated = localStorage.getItem("momentumScheduleGenerated");
+  if (savedGenerated !== "true") {
+    scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+    return;
+  }
+
+  const days = scheduleRange
+    ? Number(scheduleRange.value || localStorage.getItem("momentumScheduleRange") || 7)
+    : 7;
+
+  const max_tasks_per_day = maxTasksPerDay
+    ? Number(maxTasksPerDay.value || localStorage.getItem("momentumMaxTasksPerDay") || 4)
+    : 4;
+
+  try {
+    const res = await fetch("/api/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days, max_tasks_per_day })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+
+      if (scheduleMessage) {
+        scheduleMessage.textContent = data.error || "Failed to refresh schedule.";
+        scheduleMessage.className = "message error";
+      }
+
+      if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+      if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+      if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+      if (scheduleSummary) {
+        scheduleSummary.textContent = "No schedule insights are available.";
+      }
+      if (conflictOutput) {
+        conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
+      }
+
+      return;
+    }
+
+    const scheduleData = data.schedule || {};
+    const hasScheduledTasks = Object.values(scheduleData).some(day => day.length > 0);
+
+    if (!hasScheduledTasks) {
+      scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+
+      if (scheduleLoadFill) scheduleLoadFill.style.width = "0%";
+      if (scheduleLoadPercent) scheduleLoadPercent.textContent = "0%";
+      if (scheduleLoadText) scheduleLoadText.textContent = "0 / 0 slots used";
+      if (scheduleSummary) {
+        scheduleSummary.textContent = "No schedule insights are available because no tasks were scheduled.";
+      }
+      if (conflictOutput) {
+        conflictOutput.innerHTML = "<p>No conflicts detected.</p>";
+      }
+
+      return;
+    }
+
+    renderSchedule(scheduleData);
+    updateScheduleLoad(scheduleData);
+    generateScheduleSummary(scheduleData);
+
+    const conflicts = detectAllScheduleConflicts(scheduleData);
+    renderConflictAlerts(conflicts);
+  } catch (err) {
+    console.error(err);
+    scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+
+    if (scheduleMessage) {
+      scheduleMessage.textContent = "Failed to refresh schedule.";
+      scheduleMessage.className = "message error";
+    }
+  }
+}
+
+
+function loadSavedScheduleSettings() {
+  const savedRange = localStorage.getItem("momentumScheduleRange");
+  const savedMaxTasks = localStorage.getItem("momentumMaxTasksPerDay");
+
+  if (savedRange && scheduleRange) {
+    scheduleRange.value = savedRange;
+  }
+
+  if (savedMaxTasks && maxTasksPerDay) {
+    maxTasksPerDay.value = savedMaxTasks;
   }
 }
 
@@ -1119,6 +1302,10 @@ async function handleGenerateSchedule() {
     renderSchedule(scheduleData);
     updateScheduleLoad(scheduleData);
     generateScheduleSummary(scheduleData);
+    
+    localStorage.setItem("momentumScheduleRange", String(days));
+localStorage.setItem("momentumMaxTasksPerDay", String(max_tasks_per_day));
+localStorage.setItem("momentumScheduleGenerated", "true");
   } catch (err) {
     console.error(err);
 
@@ -1239,6 +1426,170 @@ async function loadDashboard() {
 }
 
 
+/* 
+User Story -- Conflict Detection Use
+
+*/
+
+
+
+function parseTimeToMinutes(timeStr) {
+  const [timePart, meridiem] = timeStr.split(" ");
+  let [hours, minutes] = timePart.split(":").map(Number);
+
+  if (meridiem === "PM" && hours !== 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+function findScheduleConflicts(tasksForDay) {
+  const conflicts = [];
+
+  for (let i = 0; i < tasksForDay.length; i++) {
+    const current = tasksForDay[i];
+    const currentStart = parseTimeToMinutes(current.scheduled_start);
+    const currentEnd = parseTimeToMinutes(current.scheduled_end);
+
+    for (let j = i + 1; j < tasksForDay.length; j++) {
+      const next = tasksForDay[j];
+      const nextStart = parseTimeToMinutes(next.scheduled_start);
+      const nextEnd = parseTimeToMinutes(next.scheduled_end);
+
+      const overlaps = currentStart < nextEnd && nextStart < currentEnd;
+
+      if (overlaps) {
+        conflicts.push({
+          firstTaskId: current.id,
+          secondTaskId: next.id,
+          firstTask: current,
+          secondTask: next
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+function parseTimeToMinutes(timeStr) {
+  const [timePart, meridiem] = timeStr.split(" ");
+  let [hours, minutes] = timePart.split(":").map(Number);
+
+  if (meridiem === "PM" && hours !== 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+function findScheduleConflicts(tasksForDay) {
+  const conflicts = [];
+
+  for (let i = 0; i < tasksForDay.length; i++) {
+    const firstTask = tasksForDay[i];
+    const firstStart = parseTimeToMinutes(firstTask.scheduled_start);
+    const firstEnd = parseTimeToMinutes(firstTask.scheduled_end);
+
+    for (let j = i + 1; j < tasksForDay.length; j++) {
+      const secondTask = tasksForDay[j];
+      const secondStart = parseTimeToMinutes(secondTask.scheduled_start);
+      const secondEnd = parseTimeToMinutes(secondTask.scheduled_end);
+
+      const overlaps = firstStart < secondEnd && secondStart < firstEnd;
+
+      if (overlaps) {
+        conflicts.push({
+          firstTaskId: firstTask.id,
+          secondTaskId: secondTask.id,
+          firstTask,
+          secondTask
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+function loadSavedSchedule() {
+  if (!scheduleOutput) return;
+
+  const savedSchedule = localStorage.getItem("momentumSchedule");
+  const savedRange = localStorage.getItem("momentumScheduleRange");
+  const savedMaxTasks = localStorage.getItem("momentumMaxTasksPerDay");
+
+  if (savedRange && scheduleRange) {
+    scheduleRange.value = savedRange;
+  }
+
+  if (savedMaxTasks && maxTasksPerDay) {
+    maxTasksPerDay.value = savedMaxTasks;
+  }
+
+  if (!savedSchedule) {
+    scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+    return;
+  }
+
+  const scheduleData = JSON.parse(savedSchedule);
+
+  renderSchedule(scheduleData);
+  updateScheduleLoad(scheduleData);
+  generateScheduleSummary(scheduleData);
+
+  const conflicts = detectAllScheduleConflicts(scheduleData);
+  renderConflictAlerts(conflicts);
+}
+
+function detectAllScheduleConflicts(schedule) {
+  const allConflicts = [];
+
+  Object.entries(schedule).forEach(([dayKey, tasksForDay]) => {
+    const dayConflicts = findScheduleConflicts(tasksForDay).map(conflict => ({
+      dayKey,
+      ...conflict
+    }));
+
+    allConflicts.push(...dayConflicts);
+  });
+
+  return allConflicts;
+}
+
+const conflictOutput = document.getElementById("conflictOutput");
+
+function renderConflictAlerts(conflicts) {
+  if (!conflictOutput) return;
+
+  if (!conflicts.length) {
+    conflictOutput.innerHTML = `<p>No conflicts detected.</p>`;
+    return;
+  }
+
+  conflictOutput.innerHTML = `
+    <div class="message error">
+      Schedule conflict detected.
+    </div>
+  `;
+
+  conflicts.forEach(conflict => {
+    const item = document.createElement("div");
+    item.className = "conflict-item";
+    item.innerHTML = `
+      <p>
+        <strong>${conflict.firstTask.title}</strong>
+        (${conflict.firstTask.scheduled_start} – ${conflict.firstTask.scheduled_end})
+        overlaps with
+        <strong>${conflict.secondTask.title}</strong>
+        (${conflict.secondTask.scheduled_start} – ${conflict.secondTask.scheduled_end})
+        on ${conflict.dayKey}.
+      </p>
+      <p class="due-meta">Suggested next slot: after ${conflict.firstTask.scheduled_end}</p>
+    `;
+    conflictOutput.appendChild(item);
+  });
+}
+
 
 function closeIntroOverlay() {
   if (!introOverlay) return;
@@ -1270,3 +1621,55 @@ if (tbody && sortSelect) {
 
 loadDashboard();
 loadQuote();
+
+
+
+
+if (scheduleOutput) {
+  loadSavedScheduleSettings();
+  refreshScheduleView();
+}
+
+
+
+/*
+const DEBUG_CONFLICT_TEST = true;
+
+if (DEBUG_CONFLICT_TEST && scheduleOutput) {
+  const todayKey = formatLocalDateKey(new Date());
+
+  const testConflictSchedule = {
+    [todayKey]: [
+      {
+        id: 1,
+        title: "Task A",
+        status: "Pending",
+        due_date: `${todayKey} 15:00`,
+        priority: "High",
+        effort_level: "Medium",
+        category: "School",
+        scheduled_start: "2:00 PM",
+        scheduled_end: "3:00 PM"
+      },
+      {
+        id: 2,
+        title: "Task B",
+        status: "Pending",
+        due_date: `${todayKey} 16:00`,
+        priority: "Medium",
+        effort_level: "High",
+        category: "Work",
+        scheduled_start: "2:30 PM",
+        scheduled_end: "3:30 PM"
+      }
+    ]
+  };
+
+  renderSchedule(testConflictSchedule);
+
+  const conflicts = detectAllScheduleConflicts(testConflictSchedule);
+  console.log("TEST CONFLICTS:", conflicts);
+
+  renderConflictAlerts(conflicts);
+}
+*/

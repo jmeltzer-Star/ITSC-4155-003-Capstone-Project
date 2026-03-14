@@ -1186,3 +1186,16 @@ button {
 	  font-size: 2.4rem;
 	}
   }
+
+  .schedule-task-conflict {
+	border: 2px solid #dc2626;
+	background: #fef2f2;
+  }
+  
+  .conflict-item {
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid #fecaca;
+	border-radius: 10px;
+	background: #fff7f7;
+  }
