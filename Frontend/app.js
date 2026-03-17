@@ -145,7 +145,17 @@ Overdue tasks appear visually distinct in the Task Log.
 ========================================================
 */
 
-
+function isTaskOverdue(task) { 
+  if (!task.due_date || task.status === "Completed") {
+    return false;
+  }
+  const dueDate = new Date(task.due_date);
+  if (isNaN(dueDate.getTime())) {
+    return false; // Invalid date
+  }
+  const now = new Date();
+  return dueDate < now;
+}
 
 
 function validateFutureDate(inputValue, inlineMsgEl) {
@@ -1090,8 +1100,19 @@ async function loadQuote() {
 async function refreshScheduleView() {
   if (!scheduleOutput) return;
 
-  const days = scheduleRange ? Number(scheduleRange.value) : 7;
-  const max_tasks_per_day = maxTasksPerDay ? Number(maxTasksPerDay.value) : 4;
+  const savedGenerated = localStorage.getItem("momentumScheduleGenerated");
+  if (savedGenerated !== "true") {
+    scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+    return;
+  }
+
+  const days = scheduleRange
+    ? Number(scheduleRange.value || localStorage.getItem("momentumScheduleRange") || 7)
+    : 7;
+
+  const max_tasks_per_day = maxTasksPerDay
+    ? Number(maxTasksPerDay.value || localStorage.getItem("momentumMaxTasksPerDay") || 4)
+    : 4;
 
   try {
     const res = await fetch("/api/schedule", {
@@ -1103,6 +1124,8 @@ async function refreshScheduleView() {
     const data = await res.json();
 
     if (!res.ok) {
+      scheduleOutput.innerHTML = "<p>No scheduled tasks available.</p>";
+
       if (scheduleMessage) {
         scheduleMessage.textContent = data.error || "Failed to refresh schedule.";
         scheduleMessage.className = "message error";
@@ -1126,7 +1149,6 @@ async function refreshScheduleView() {
     }
 
     const scheduleData = data.schedule || {};
-
     const hasScheduledTasks = Object.values(scheduleData).some(day => day.length > 0);
 
     if (!hasScheduledTasks) {
