@@ -209,6 +209,51 @@ function formatForBackend(datetimeLocalValue) {
     : datetimeLocalValue;
 }
 
+/* 
+
+Feature: Date Parsing and Future Date Validation
+
+Purpose
+
+Handles task due date validation by converting user input into a JavaScript Date object and ensuring the selected date is valid and in the future before allowing a task to be created or updated.
+
+Function #1: parseDateInput()
+
+Purpose:
+Converts a date string from a form input into a usable JavaScript Date object.
+
+What it handles:
+	•	Supports HTML datetime-local inputs (format includes "T")
+	•	Extracts year, month, day, hour, and minute
+	•	Returns a properly formatted Date object
+	•	Returns null if no value is provided
+
+
+
+Function: validateFutureDate()
+
+Purpose:
+Ensures that the user selects a valid due date that is in the future before submitting a task.
+
+Validation Checks
+	1.	Ensures the field is not empty
+	2.	Ensures the date format is valid
+	3.	Ensures the selected date is later than the current time
+
+User Feedback
+If validation fails, an inline error message is shown next to the input field.
+
+Possible Messages
+	•	"Required"
+	•	"Invalid date"
+	•	"Due date must be in the future."
+
+
+
+
+
+
+*/
 
 
 
