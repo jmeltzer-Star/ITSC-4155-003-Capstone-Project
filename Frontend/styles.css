@@ -3857,3 +3857,479 @@ button {
 	  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 	}
   }
+  .task-description-preview {
+	margin-top: 8px;
+	color: rgba(255,255,255,0.72);
+	font-size: 0.88rem;
+	line-height: 1.5;
+  }
+  .modern-task-form textarea {
+	width: 100%;
+	padding: 14px 16px;
+	border-radius: 16px;
+	border: 1px solid rgba(255,255,255,0.10);
+	background: rgba(255,255,255,0.06);
+	color: white;
+	font-size: 0.96rem;
+	resize: vertical;
+	min-height: 100px;
+	backdrop-filter: blur(10px);
+	transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .modern-task-form textarea:focus {
+	outline: none;
+	border-color: rgba(216,180,254,0.28);
+	background: rgba(255,255,255,0.08);
+	box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
+  }
+  .modern-task-form input[type="datetime-local"] {
+	width: 100%;
+	padding: 14px 16px;
+	border-radius: 16px;
+	border: 1px solid rgba(255,255,255,0.10);
+	background: rgba(255,255,255,0.06);
+	color: #ffffff;
+	font-size: 0.96rem;
+	backdrop-filter: blur(10px);
+	transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+	color-scheme: dark;
+  }
+  
+  .modern-task-form input[type="datetime-local"]:focus {
+	outline: none;
+	border-color: rgba(216,180,254,0.28);
+	background: rgba(255,255,255,0.08);
+	box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
+  }
+
+  .assignment-collections-panel {
+	margin-top: 24px;
+  }
+  
+  .assignment-collections-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 18px;
+  }
+  
+  .assignment-collection-card {
+	padding: 18px;
+	border-radius: 22px;
+	background: rgba(255,255,255,0.05);
+	border: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .assignment-collection-card h3 {
+	margin: 0 0 14px;
+	font-size: 1.05rem;
+	color: #ffffff;
+  }
+  
+  .assignment-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+  }
+  
+  .assignment-item {
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: rgba(255,255,255,0.06);
+	border: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .assignment-item-title {
+	display: block;
+	font-weight: 700;
+	color: #ffffff;
+	margin-bottom: 6px;
+  }
+  
+  .assignment-item-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	color: rgba(255,255,255,0.68);
+	font-size: 0.86rem;
+  }
+  
+  .empty-state-text {
+	margin: 0;
+	color: rgba(255,255,255,0.55);
+  }
+  
+  @media (max-width: 900px) {
+	.assignment-collections-grid {
+	  grid-template-columns: 1fr;
+	}
+  }
+  .assignment-collections-panel {
+  margin-top: 24px;
+}
+
+.assignment-collections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.assignment-collection-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.assignment-collection-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  color: #ffffff;
+}
+
+.assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assignment-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.assignment-item-title {
+  display: block;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.assignment-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: rgba(255,255,255,0.68);
+  font-size: 0.86rem;
+}
+
+.empty-state-text {
+  margin: 0;
+  color: rgba(255,255,255,0.55);
+}
+
+@media (max-width: 900px) {
+  .assignment-collections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.assignment-item {
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: rgba(255,255,255,0.06);
+	border: 1px solid rgba(255,255,255,0.08);
+	transition: transform 0.18s ease, background 0.18s ease;
+  }
+  
+  .assignment-item:hover {
+	transform: translateY(-2px);
+	background: rgba(255,255,255,0.08);
+  }
+  
+  .assignment-item.completed {
+	opacity: 0.8;
+  }
+  
+  .assignment-item-title {
+	display: block;
+	font-weight: 700;
+	color: #ffffff;
+	margin-bottom: 6px;
+  }
+  
+  .assignment-item-description {
+	margin-bottom: 10px;
+	color: rgba(255,255,255,0.72);
+	font-size: 0.88rem;
+	line-height: 1.5;
+  }
+  
+  .assignment-item-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	color: rgba(255,255,255,0.68);
+	font-size: 0.86rem;
+  }
+  .assignment-more-text {
+	margin: 4px 2px 0;
+	color: rgba(255,255,255,0.58);
+	font-size: 0.84rem;
+	font-weight: 600;
+  }
+  .tasks-main-layout {
+	display: grid;
+	grid-template-columns: 0.95fr 1.25fr 0.8fr;
+	gap: 22px;
+	align-items: start;
+  }
+  
+  .tasks-left-column {
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+  }
+  
+  .assignments-sidebar-panel {
+	position: sticky;
+	top: 110px;
+  }
+  
+  .assignment-sidebar-sections {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+  }
+  
+  .assignment-collection-card {
+	padding: 18px;
+	border-radius: 22px;
+	background: rgba(255,255,255,0.05);
+	border: 1px solid rgba(255,255,255,0.08);
+  }
+  
+  .assignment-collection-card h3 {
+	margin: 0 0 14px;
+	font-size: 1.02rem;
+	color: #ffffff;
+  }
+  
+  .assignment-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-height: 420px;
+	overflow-y: auto;
+	padding-right: 4px;
+  }
+  
+  @media (max-width: 1250px) {
+	.tasks-main-layout {
+	  grid-template-columns: 1fr;
+	}
+  
+	.assignments-sidebar-panel {
+	  position: static;
+	}
+  }
+
+  .insights-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+  }
+  
+  .insight-item {
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: rgba(255,255,255,0.06);
+	border: 1px solid rgba(255,255,255,0.08);
+	color: rgba(255,255,255,0.88);
+	line-height: 1.55;
+	font-size: 0.94rem;
+  }
+  /* =========================
+   Flatpickr – Momentum Theme
+========================= */
+/* =========================
+   Momentum Flatpickr Header
+========================= */
+/* =========================
+   Momentum Flatpickr Theme
+========================= */
+/* =========================
+   Momentum Flatpickr Theme
+========================= */
+
+.flatpickr-calendar {
+	background: linear-gradient(180deg, rgba(44, 39, 75, 0.98), rgba(36, 33, 68, 0.98)) !important;
+	border: 1px solid rgba(255, 255, 255, 0.10) !important;
+	border-radius: 20px !important;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.30) !important;
+	overflow: hidden;
+	backdrop-filter: blur(18px);
+  }
+  
+  .flatpickr-months {
+	position: relative;
+	height: 56px !important;
+	background: linear-gradient(180deg, rgba(97, 62, 186, 0.20), rgba(255, 255, 255, 0.02)) !important;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	padding: 0 !important;
+  }
+  
+  .flatpickr-month {
+	height: 56px !important;
+	background: transparent !important;
+  }
+  
+  .flatpickr-current-month {
+	position: absolute !important;
+	top: 12px !important;
+	left: 44px !important;
+	right: 44px !important;
+	width: auto !important;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 0 !important;
+	line-height: 1 !important;
+	color: #f5f3ff !important;
+	font-weight: 800 !important;
+	font-size: 1.04rem !important;
+  }
+  
+  .flatpickr-current-month .cur-month {
+	display: inline-block !important;
+	color: #f5f3ff !important;
+	font-weight: 800 !important;
+	font-size: 1.04rem !important;
+	visibility: visible !important;
+	opacity: 1 !important;
+  }
+  
+  .flatpickr-current-month .numInputWrapper {
+	display: inline-flex !important;
+	align-items: center;
+	width: auto !important;
+  }
+  
+  .flatpickr-current-month .numInput.cur-year {
+	width: 54px !important;
+	padding: 0 !important;
+	color: #f5f3ff !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	font-weight: 800 !important;
+	font-size: 1.04rem !important;
+  }
+  
+  .flatpickr-current-month .numInputWrapper span {
+	display: none !important;
+  }
+  
+  /* month nav arrows */
+  .flatpickr-prev-month,
+  .flatpickr-next-month {
+	top: 10px !important;
+	padding: 7px !important;
+	border-radius: 10px;
+	transition: background 0.18s ease, transform 0.18s ease;
+  }
+  
+  .flatpickr-prev-month:hover,
+  .flatpickr-next-month:hover {
+	background: rgba(255, 255, 255, 0.08) !important;
+	transform: scale(1.04);
+  }
+  
+  .flatpickr-prev-month svg,
+  .flatpickr-next-month svg {
+	width: 14px !important;
+	height: 14px !important;
+	fill: #d8b4fe !important;
+  }
+  
+  /* weekdays */
+  .flatpickr-weekdays {
+	background: transparent !important;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	margin: 0 10px;
+	padding: 6px 0 !important;
+  }
+  
+  .flatpickr-weekdaycontainer {
+	background: transparent !important;
+  }
+  
+  .flatpickr-weekday {
+	color: rgba(255, 255, 255, 0.68) !important;
+	background: transparent !important;
+	font-size: 0.72rem !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+  }
+  
+  /* days */
+  .flatpickr-days {
+	padding: 8px;
+  }
+  
+  .flatpickr-day {
+	color: rgba(255, 255, 255, 0.90) !important;
+	border: 1px solid transparent !important;
+	border-radius: 12px !important;
+	transition: all 0.18s ease;
+  }
+  
+  .flatpickr-day:hover {
+	background: rgba(124, 58, 237, 0.16) !important;
+	border-color: rgba(216, 180, 254, 0.20) !important;
+  }
+  
+  .flatpickr-day.today {
+	border-color: rgba(196, 181, 253, 0.95) !important;
+	color: #ffffff !important;
+  }
+  
+  .flatpickr-day.selected,
+  .flatpickr-day.startRange,
+  .flatpickr-day.endRange {
+	background: linear-gradient(135deg, #4f7df3, #8b2cf5) !important;
+	border-color: transparent !important;
+	color: #ffffff !important;
+	box-shadow: 0 8px 18px rgba(124, 58, 237, 0.28);
+  }
+  
+  .flatpickr-day.inRange {
+	background: rgba(124, 58, 237, 0.12) !important;
+	color: #ffffff !important;
+  }
+  
+  .flatpickr-day.flatpickr-disabled,
+  .flatpickr-day.prevMonthDay,
+  .flatpickr-day.nextMonthDay {
+	color: rgba(255, 255, 255, 0.28) !important;
+  }
+  
+  /* time footer */
+  .flatpickr-time {
+	background: rgba(255, 255, 255, 0.04) !important;
+	border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  .flatpickr-time input,
+  .flatpickr-time .flatpickr-am-pm {
+	color: #ffffff !important;
+	background: transparent !important;
+	font-weight: 700;
+  }
+  
+  .flatpickr-time input:hover,
+  .flatpickr-time .flatpickr-am-pm:hover {
+	background: rgba(255, 255, 255, 0.06) !important;
+  }
+  
+  .flatpickr-time .numInputWrapper span.arrowUp:after {
+	border-bottom-color: #d8b4fe !important;
+  }
+  
+  .flatpickr-time .numInputWrapper span.arrowDown:after {
+	border-top-color: #d8b4fe !important;
+  }

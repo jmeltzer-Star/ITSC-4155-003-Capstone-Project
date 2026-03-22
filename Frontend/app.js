@@ -173,6 +173,8 @@ const editDurationMinutes = document.getElementById("editDurationMinutes");
 const editEffortLevel = document.getElementById("editEffortLevel");
 const editStartAfter = document.getElementById("editStartAfter");
 const editCategory = document.getElementById("editCategory");
+const editDescription = document.getElementById("editDescription");
+const editNotes = document.getElementById("editNotes");
 
 // --- Schedule / Intelligence Elements ---
 const scheduleLoadFill = document.getElementById("scheduleLoadFill");
@@ -182,6 +184,7 @@ const scheduleSummary = document.getElementById("scheduleSummary");
 // --- Intro / Landing Elements ---
 const introOverlay = document.getElementById("introOverlay");
 const introContinueBtn = document.getElementById("introContinueBtn");
+const insightsList = document.getElementById("insightsList");
 
 
 /* ========================================================
@@ -381,6 +384,7 @@ async function fetchTasks() {
     }
 
     renderTasks(tasks);
+    renderAssignmentCollections(tasks);
   } catch (err) {
     tbody.innerHTML = `
       <tr>
@@ -450,6 +454,23 @@ function generateScheduleSummary(schedule) {
   scheduleSummary.textContent = summaries.join(" ");
 }
 
+function generateSchedule(tasks, startHour = 9) {
+  let current = startHour * 60; // minutes
+
+  return tasks.map(task => {
+    const start = current;
+    const end = current + task.duration;
+
+    current = end;
+
+    return {
+      ...task,
+      start,
+      end
+    };
+  });
+}
+
 
 /*
 Purpose:
@@ -503,11 +524,13 @@ function renderTasks(tasks) {
       <td>
         <div class="task-title-cell">
           <div class="task-main-title">${overdueDot}${task.title}</div>
+          ${task.description ? `<div class="task-description-preview">${task.description}</div>` : ""}
           <div class="task-meta">
             <span class="task-meta-pill">${task.category}</span>
             <span class="task-meta-pill">${task.duration_minutes} min</span>
             <span class="task-meta-pill">${task.effort_level} Effort</span>
             <span class="task-meta-pill">Start: ${formattedStartAfter}</span>
+            ${task.notes ? `<span class="task-meta-pill">Notes</span>` : ""}
           </div>
         </div>
       </td>
@@ -515,9 +538,9 @@ function renderTasks(tasks) {
       <td>${task.due_date}</td>
       <td><span class="priority-pill ${priorityClass}">${task.priority}</span></td>
       <td class="actions-cell">
-      <button type="button" class="edit-btn">Edit</button>
-      <button type="button" class="delete-btn">Delete</button>
-      ${task.status !== "Completed" ? '<button type="button" class="complete-btn">Complete</button>' : ""}
+        <button type="button" class="edit-btn">Edit</button>
+        <button type="button" class="delete-btn">Delete</button>
+        ${task.status !== "Completed" ? '<button type="button" class="complete-btn">Complete</button>' : ""}
       </td>
     `;
 
@@ -540,6 +563,73 @@ function renderTasks(tasks) {
   });
 }
 
+/*
+========================================================
+Feature: Smart Insights Panel
+
+Purpose:
+Analyze task data and display short, product-style insights
+that make the dashboard feel intelligent and actionable.
+========================================================
+*/
+function renderDashboardInsights(tasks) {
+  if (!insightsList) return;
+
+  if (!Array.isArray(tasks)) {
+    insightsList.innerHTML = `<div class="insight-item">No insight data available yet.</div>`;
+    return;
+  }
+
+  const now = new Date();
+  const todayKey = formatLocalDateKey(now);
+
+  const completedTasks = tasks.filter(task => task.status === "Completed");
+  const completedToday = completedTasks.filter(task => {
+    if (!task.due_date) return false;
+    return String(task.due_date).startsWith(todayKey);
+  });
+
+  const categoryCounts = {};
+  tasks.forEach(task => {
+    const category = task.category || "General";
+    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+  });
+
+  let topCategory = "None yet";
+  let topCategoryCount = 0;
+
+  Object.entries(categoryCounts).forEach(([category, count]) => {
+    if (count > topCategoryCount) {
+      topCategory = category;
+      topCategoryCount = count;
+    }
+  });
+
+  const durationTasks = tasks.filter(task => Number(task.duration_minutes) > 0);
+  const avgDuration = durationTasks.length
+    ? Math.round(
+        durationTasks.reduce((sum, task) => sum + Number(task.duration_minutes), 0) /
+        durationTasks.length
+      )
+    : 0;
+
+  const highPriorityPending = tasks.filter(
+    task => task.status !== "Completed" && task.priority === "High"
+  ).length;
+
+  const insights = [
+    `You completed ${completedToday.length} task${completedToday.length === 1 ? "" : "s"} today 🔥`,
+    `Most active category: ${topCategory}`,
+    `Average planned task duration: ${avgDuration} min`,
+    highPriorityPending > 0
+      ? `${highPriorityPending} high-priority task${highPriorityPending === 1 ? "" : "s"} still need attention`
+      : "No high-priority tasks are currently waiting ✅"
+  ];
+
+  insightsList.innerHTML = insights
+    .map(insight => `<div class="insight-item">${insight}</div>`)
+    .join("");
+}
 
 
 /* ========================================================
@@ -667,6 +757,34 @@ async function undoCompleteTask(task, previousStatus = "Pending") {
 ======================================================== */
 
 
+function initDatePickers() {
+  if (typeof flatpickr === "undefined") {
+    console.warn("Flatpickr is not loaded.");
+    return;
+  }
+
+  const pickerConfig = {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    altInput: true,
+    altFormat: "m/d/Y, h:i K",
+    time_24hr: false,
+    allowInput: true,
+    minuteIncrement: 15,
+    disableMobile: true,
+    monthSelectorType: "static"
+  };
+
+  const dueDate = document.getElementById("dueDate");
+  const startAfter = document.getElementById("startAfter");
+  const editDueDate = document.getElementById("editDueDate");
+  const editStartAfter = document.getElementById("editStartAfter");
+
+  if (dueDate) flatpickr(dueDate, pickerConfig);
+  if (startAfter) flatpickr(startAfter, pickerConfig);
+  if (editDueDate) flatpickr(editDueDate, pickerConfig);
+  if (editStartAfter) flatpickr(editStartAfter, pickerConfig);
+}
 
 function highlightUpdatedFields(id, updatedTask) {
   const row = document.querySelector(`tr[data-task-id="${id}"]`);
@@ -740,6 +858,8 @@ if (form) {
     const effortLevel = document.getElementById("effortLevel")?.value || "Medium";
     const startAfterInput = document.getElementById("startAfter")?.value.trim() || "";
     const category = document.getElementById("category")?.value || "General";
+    const description = document.getElementById("description")?.value.trim() || "";
+    const notes = document.getElementById("notes")?.value.trim() || "";
     const dueDateMsg = document.getElementById("dueDateMsg");
 
     if (dueDateMsg) {
@@ -762,8 +882,6 @@ if (form) {
     }
 
     try {
-      console.log("Page URL:", window.location.href);
-
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -774,7 +892,9 @@ if (form) {
           duration_minutes: Number(durationMinutes),
           effort_level: effortLevel,
           start_after,
-          category
+          category,
+          description,
+          notes
         })
       });
 
@@ -872,13 +992,21 @@ function openEditForm(task) {
 
   editTaskId.value = task.id;
   editTitle.value = task.title;
-  editDueDate.value = task.due_date.replace(" ", "T");
+  editDueDate.value = task.due_date || "";
   editPriority.value = task.priority;
   editStatus.value = task.status;
   editDurationMinutes.value = task.duration_minutes ?? 60;
   editEffortLevel.value = task.effort_level ?? "Medium";
-  editStartAfter.value = task.start_after ? task.start_after.replace(" ", "T") : "";
+  editStartAfter.value = task.start_after || "";
   editCategory.value = task.category ?? "General";
+
+  if (editDescription) {
+    editDescription.value = task.description ?? "";
+  }
+
+  if (editNotes) {
+    editNotes.value = task.notes ?? "";
+  }
 
   originalTaskData = { ...task };
 
@@ -888,7 +1016,6 @@ function openEditForm(task) {
 
   editSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 
 /*
 Purpose:
@@ -902,6 +1029,15 @@ function closeEditForm() {
   editMessage.textContent = "";
   editMessage.className = "message";
   editDueDateMsg.textContent = "";
+
+  if (editDescription) {
+    editDescription.value = "";
+  }
+
+  if (editNotes) {
+    editNotes.value = "";
+  }
+
   originalTaskData = null;
 }
 
@@ -991,6 +1127,8 @@ if (editForm) {
     const effortLevel = editEffortLevel.value;
     const startAfterInput = editStartAfter.value.trim();
     const category = editCategory.value;
+    const description = editDescription ? editDescription.value.trim() : "";
+    const notes = editNotes ? editNotes.value.trim() : "";
 
     if (!title) {
       editMessage.textContent = "Title is required.";
@@ -1017,7 +1155,9 @@ if (editForm) {
           duration_minutes: Number(durationMinutes),
           effort_level: effortLevel,
           start_after,
-          category
+          category,
+          description,
+          notes
         })
       });
 
@@ -1041,7 +1181,9 @@ if (editForm) {
         duration_minutes: Number(durationMinutes),
         effort_level: effortLevel,
         start_after,
-        category
+        category,
+        description,
+        notes
       };
 
       await fetchTasks();
@@ -1069,6 +1211,22 @@ if (sortSelect) {
   sortSelect.addEventListener("change", fetchTasks);
 }
 
+/*
+Sorting + Completed Assignment StorAGe
+
+*/
+
+function getUpcomingTasks(tasks) {
+  return tasks
+    .filter(task => task.status !== "Completed")
+    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+}
+
+function getCompletedTasks(tasks) {
+  return tasks
+    .filter(task => task.status === "Completed")
+    .sort((a, b) => new Date(b.due_date) - new Date(a.due_date));
+}
 
 
 
@@ -1283,6 +1441,110 @@ function renderSchedule(schedule) {
   }
 }
 
+
+
+/*
+========================================================
+Feature: Render Assignment Collections
+
+Purpose:
+Display two filtered task collections:
+1. Upcoming assignments
+2. Completed assignments
+
+This supports the future sidebar/dashboard collection view.
+========================================================
+*/
+function renderAssignmentCollections(tasks) {
+  const upcomingEl = document.getElementById("upcomingAssignmentsList");
+  const completedEl = document.getElementById("completedAssignmentsList");
+  const upcomingTitle = document.getElementById("upcomingAssignmentsTitle");
+  const completedTitle = document.getElementById("completedAssignmentsTitle");
+
+  if (!upcomingEl || !completedEl) return;
+
+  const upcomingTasks = getUpcomingTasks(tasks);
+  const completedTasks = getCompletedTasks(tasks);
+
+  const maxUpcomingToShow = 5;
+  const maxCompletedToShow = 5;
+
+  const visibleUpcomingTasks = upcomingTasks.slice(0, maxUpcomingToShow);
+  const visibleCompletedTasks = completedTasks.slice(0, maxCompletedToShow);
+
+  if (upcomingTitle) {
+    upcomingTitle.textContent = `Upcoming Assignments (${upcomingTasks.length})`;
+  }
+
+  if (completedTitle) {
+    completedTitle.textContent = `Completed Assignments (${completedTasks.length})`;
+  }
+
+  upcomingEl.innerHTML = "";
+  completedEl.innerHTML = "";
+
+  if (!visibleUpcomingTasks.length) {
+    upcomingEl.innerHTML = `<p class="empty-state-text">No upcoming assignments.</p>`;
+  } else {
+    visibleUpcomingTasks.forEach((task) => {
+      let priorityClass = "priority-low";
+      if (task.priority === "High") priorityClass = "priority-high";
+      if (task.priority === "Medium") priorityClass = "priority-medium";
+
+      const item = document.createElement("div");
+      item.className = "assignment-item";
+      item.innerHTML = `
+        <span class="assignment-item-title">${task.title}</span>
+        ${task.description ? `<div class="assignment-item-description">${task.description}</div>` : ""}
+        <div class="assignment-item-meta">
+          <span>${task.due_date}</span>
+          <span class="priority-pill ${priorityClass}">${task.priority}</span>
+          <span class="task-meta-pill">${task.category}</span>
+          ${task.notes ? `<span class="task-meta-pill">Notes</span>` : ""}
+        </div>
+      `;
+      upcomingEl.appendChild(item);
+    });
+
+    if (upcomingTasks.length > maxUpcomingToShow) {
+      const more = document.createElement("p");
+      more.className = "assignment-more-text";
+      more.textContent = `+ ${upcomingTasks.length - maxUpcomingToShow} more upcoming assignments`;
+      upcomingEl.appendChild(more);
+    }
+  }
+
+  if (!visibleCompletedTasks.length) {
+    completedEl.innerHTML = `<p class="empty-state-text">No completed assignments yet.</p>`;
+  } else {
+    visibleCompletedTasks.forEach((task) => {
+      let priorityClass = "priority-low";
+      if (task.priority === "High") priorityClass = "priority-high";
+      if (task.priority === "Medium") priorityClass = "priority-medium";
+
+      const item = document.createElement("div");
+      item.className = "assignment-item completed";
+      item.innerHTML = `
+        <span class="assignment-item-title">${task.title}</span>
+        ${task.description ? `<div class="assignment-item-description">${task.description}</div>` : ""}
+        <div class="assignment-item-meta">
+          <span>${task.due_date}</span>
+          <span class="priority-pill ${priorityClass}">${task.priority}</span>
+          <span class="task-meta-pill">${task.category}</span>
+          ${task.notes ? `<span class="task-meta-pill">Notes</span>` : ""}
+        </div>
+      `;
+      completedEl.appendChild(item);
+    });
+
+    if (completedTasks.length > maxCompletedToShow) {
+      const more = document.createElement("p");
+      more.className = "assignment-more-text";
+      more.textContent = `+ ${completedTasks.length - maxCompletedToShow} more completed assignments`;
+      completedEl.appendChild(more);
+    }
+  }
+}
 
 
 /**Extra Design Feature -- Loading Quote */
@@ -1581,11 +1843,17 @@ async function loadDashboard() {
 
   try {
     const res = await fetch("/api/tasks?sort=date");
-    const tasks = await res.json();
 
     if (!res.ok) {
-      throw new Error(tasks.error || "Failed to load dashboard data.");
+      const errorText = await res.text();
+      console.error("Dashboard fetch failed:", res.status, errorText);
+      throw new Error(`Failed to load dashboard data: ${res.status}`);
     }
+
+    const tasks = await res.json();
+    console.log("Dashboard tasks loaded:", tasks);
+
+    renderDashboardInsights(tasks);
 
     const totalTasks = tasks.length;
     const pendingCount = tasks.filter(t => t.status !== "Completed").length;
@@ -1642,8 +1910,9 @@ async function loadDashboard() {
       `;
       recentTasksBody.appendChild(row);
     });
+
   } catch (err) {
-    console.error(err);
+    console.error("loadDashboard error:", err);
 
     if (recentTasksBody) {
       recentTasksBody.innerHTML = `
@@ -1663,6 +1932,10 @@ async function loadDashboard() {
 
     if (progressText) {
       progressText.textContent = "Unable to load progress";
+    }
+
+    if (insightsList) {
+      insightsList.innerHTML = `<div class="insight-item">Unable to load insights right now.</div>`;
     }
   }
 }
@@ -2085,6 +2358,7 @@ if (tbody && sortSelect) {
 
 loadDashboard();
 loadQuote();
+initDatePickers();
 
 const orbCanvas = document.getElementById("momentumOrbCanvas");
 if (orbCanvas) {

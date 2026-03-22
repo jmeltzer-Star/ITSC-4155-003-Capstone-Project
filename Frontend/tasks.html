@@ -8,6 +8,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tasks | Momentum</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 </head>
 <body class="app-page">
   <div class="app-shell">
@@ -41,86 +44,218 @@
         </div>
       </section>
 
-      <section class="tasks-layout">
-        <section class="dashboard-panel create-task-panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-eyebrow">Create</p>
-              <h2>New Task</h2>
-            </div>
-          </div>
-
-          <form id="taskForm" class="modern-task-form">
-            <div class="form-grid">
-              <label>
-                <span>Title</span>
-                <input id="title" type="text" placeholder="Ex: Math Homework" />
-              </label>
-
-              <label>
-                <span>Due Date</span>
-                <input id="dueDate" type="datetime-local" />
-                <small id="dueDateMsg" class="field-msg"></small>
-              </label>
-
-              <label>
-                <span>Priority</span>
-                <div class="select-wrap">
-                  <select id="priority">
-                    <option value="High">High</option>
-                    <option value="Medium" selected>Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </label>
-
-              <label>
-                <span>Duration (minutes)</span>
-                <input id="durationMinutes" type="number" min="1" value="60" />
-              </label>
-
-              <label>
-                <span>Effort Level</span>
-                <div class="select-wrap">
-                  <select id="effortLevel">
-                    <option value="High">High</option>
-                    <option value="Medium" selected>Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </label>
-
-              <label>
-                <span>Earliest Start</span>
-                <input id="startAfter" type="datetime-local" />
-              </label>
-
-              <label class="full-width">
-                <span>Category</span>
-                <div class="select-wrap">
-                  <select id="category">
-                    <option value="School">School</option>
-                    <option value="Health">Health</option>
-                    <option value="Personal" selected>Personal</option>
-                    <option value="Social">Social</option>
-                    <option value="Work">Work</option>
-                    <option value="General">General</option>
-                  </select>
-                </div>
-              </label>
+      <section class="tasks-main-layout">
+        <!-- LEFT COLUMN -->
+        <div class="tasks-left-column">
+          <section class="dashboard-panel create-task-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Create</p>
+                <h2>New Task</h2>
+              </div>
             </div>
 
-            <button type="submit" class="generate-btn">Save Task</button>
-            <p id="message" class="message"></p>
-          </form>
-        </section>
+            <form id="taskForm" class="modern-task-form">
+              <div class="form-grid">
+                <label>
+                  <span>Title</span>
+                  <input id="title" type="text" placeholder="Ex: Math Homework" />
+                </label>
 
+                <label>
+                  <span>Due Date</span>
+                  <input id="dueDate" type="text" placeholder="Select due date and time" />
+                  <small id="dueDateMsg" class="field-msg"></small>
+                </label>
+
+                <label>
+                  <span>Priority</span>
+                  <div class="select-wrap">
+                    <select id="priority">
+                      <option value="High">High</option>
+                      <option value="Medium" selected>Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label>
+                  <span>Duration (minutes)</span>
+                  <input id="durationMinutes" type="number" min="1" value="60" />
+                </label>
+
+                <label>
+                  <span>Effort Level</span>
+                  <div class="select-wrap">
+                    <select id="effortLevel">
+                      <option value="High">High</option>
+                      <option value="Medium" selected>Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label>
+                  <span>Earliest Start</span>
+                  <input id="startAfter" type="text" placeholder="Select earliest start" />
+                </label>
+
+                <label class="full-width">
+                  <span>Category</span>
+                  <div class="select-wrap">
+                    <select id="category">
+                      <option value="School">School</option>
+                      <option value="Health">Health</option>
+                      <option value="Personal" selected>Personal</option>
+                      <option value="Social">Social</option>
+                      <option value="Work">Work</option>
+                      <option value="General">General</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label class="full-width">
+                  <span>Description</span>
+                  <textarea
+                    id="description"
+                    rows="3"
+                    placeholder="Short summary of the task"
+                  ></textarea>
+                </label>
+
+                <label class="full-width">
+                  <span>Notes</span>
+                  <textarea
+                    id="notes"
+                    rows="4"
+                    placeholder="Extra details, reminders, steps, or context"
+                  ></textarea>
+                </label>
+              </div>
+
+              <button type="submit" class="generate-btn">Save Task</button>
+              <p id="message" class="message"></p>
+            </form>
+          </section>
+
+          <section id="editTaskSection" class="dashboard-panel edit-task-panel" style="display: none;">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Update</p>
+                <h2>Edit Task</h2>
+              </div>
+            </div>
+
+            <form id="editTaskForm" class="modern-task-form">
+              <input type="hidden" id="editTaskId" />
+
+              <div class="form-grid">
+                <label>
+                  <span>Title</span>
+                  <input id="editTitle" type="text" placeholder="Update task title" />
+                </label>
+
+                <label>
+                  <span>Due Date</span>
+                  <input id="editDueDate" type="text" placeholder="Select due date and time" />
+                  <small id="editDueDateMsg" class="field-msg"></small>
+                </label>
+
+                <label>
+                  <span>Priority</span>
+                  <div class="select-wrap">
+                    <select id="editPriority">
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label>
+                  <span>Status</span>
+                  <div class="select-wrap">
+                    <select id="editStatus">
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label>
+                  <span>Duration (minutes)</span>
+                  <input id="editDurationMinutes" type="number" min="1" value="60" />
+                </label>
+
+                <label>
+                  <span>Effort Level</span>
+                  <div class="select-wrap">
+                    <select id="editEffortLevel">
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label>
+                  <span>Earliest Start</span>
+                  <input id="editStartAfter" type="text" placeholder="Select earliest start" />
+                </label>
+
+                <label class="full-width">
+                  <span>Category</span>
+                  <div class="select-wrap">
+                    <select id="editCategory">
+                      <option value="School">School</option>
+                      <option value="Health">Health</option>
+                      <option value="Personal">Personal</option>
+                      <option value="Social">Social</option>
+                      <option value="Work">Work</option>
+                      <option value="General">General</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label class="full-width">
+                  <span>Description</span>
+                  <textarea
+                    id="editDescription"
+                    rows="3"
+                    placeholder="Update task description"
+                  ></textarea>
+                </label>
+
+                <label class="full-width">
+                  <span>Notes</span>
+                  <textarea
+                    id="editNotes"
+                    rows="4"
+                    placeholder="Update task notes"
+                  ></textarea>
+                </label>
+              </div>
+
+              <div class="edit-form-actions">
+                <button type="submit" class="generate-btn">Update Task</button>
+                <button type="button" id="cancelEditBtn" class="app-nav-btn secondary">Cancel</button>
+              </div>
+
+              <p id="editMessage" class="message"></p>
+            </form>
+          </section>
+        </div>
+
+        <!-- MIDDLE COLUMN -->
         <section class="dashboard-panel task-log-panel">
           <div class="task-log-toolbar">
             <div>
               <p class="panel-eyebrow">Workspace</p>
               <h2>Task Log</h2>
-              <p class="task-log-subtitle">Review, update, and complete the work in front of you.</p>
+              <p class="task-log-subtitle">
+                Review, update, and complete the work in front of you.
+              </p>
             </div>
 
             <div class="sort-wrap">
@@ -154,100 +289,40 @@
             </table>
           </div>
         </section>
-      </section>
 
-      <section id="editTaskSection" class="dashboard-panel edit-task-panel" style="display: none;">
-        <div class="panel-header">
-          <div>
-            <p class="panel-eyebrow">Update</p>
-            <h2>Edit Task</h2>
-          </div>
-        </div>
-
-        <form id="editTaskForm" class="modern-task-form">
-          <input type="hidden" id="editTaskId" />
-
-          <div class="form-grid">
-            <label>
-              <span>Title</span>
-              <input id="editTitle" type="text" placeholder="Update task title" />
-            </label>
-
-            <label>
-              <span>Due Date</span>
-              <input id="editDueDate" type="datetime-local" />
-              <small id="editDueDateMsg" class="field-msg"></small>
-            </label>
-
-            <label>
-              <span>Priority</span>
-              <div class="select-wrap">
-                <select id="editPriority">
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-            </label>
-
-            <label>
-              <span>Status</span>
-              <div class="select-wrap">
-                <select id="editStatus">
-                  <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-            </label>
-
-            <label>
-              <span>Duration (minutes)</span>
-              <input id="editDurationMinutes" type="number" min="1" value="60" />
-            </label>
-
-            <label>
-              <span>Effort Level</span>
-              <div class="select-wrap">
-                <select id="editEffortLevel">
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-            </label>
-
-            <label>
-              <span>Earliest Start</span>
-              <input id="editStartAfter" type="datetime-local" />
-            </label>
-
-            <label class="full-width">
-              <span>Category</span>
-              <div class="select-wrap">
-                <select id="editCategory">
-                  <option value="School">School</option>
-                  <option value="Health">Health</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Social">Social</option>
-                  <option value="Work">Work</option>
-                  <option value="General">General</option>
-                </select>
-              </div>
-            </label>
+        <!-- RIGHT SIDEBAR -->
+        <aside class="dashboard-panel assignments-sidebar-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-eyebrow">Collections</p>
+              <h2>Assignments</h2>
+              <p class="task-log-subtitle">
+                Track what is coming up and what you have already completed.
+              </p>
+            </div>
           </div>
 
-          <div class="edit-form-actions">
-            <button type="submit" class="generate-btn">Update Task</button>
-            <button type="button" id="cancelEditBtn" class="app-nav-btn secondary">Cancel</button>
-          </div>
+          <div class="assignment-sidebar-sections">
+            <div class="assignment-collection-card">
+              <h3 id="upcomingAssignmentsTitle">Upcoming Assignments</h3>
+              <div id="upcomingAssignmentsList" class="assignment-list">
+                <p class="empty-state-text">No upcoming assignments.</p>
+              </div>
+            </div>
 
-          <p id="editMessage" class="message"></p>
-        </form>
+            <div class="assignment-collection-card">
+              <h3 id="completedAssignmentsTitle">Completed Assignments</h3>
+              <div id="completedAssignmentsList" class="assignment-list">
+                <p class="empty-state-text">No completed assignments yet.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
       </section>
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="app.js"></script>
 </body>
 </html>

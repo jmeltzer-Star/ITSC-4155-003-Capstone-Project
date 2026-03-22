@@ -24,7 +24,6 @@ def schedule_page():
 def health():
     return jsonify({"status": "ok"}), 200
 
-# GET tasks (supports sorting)
 @api.route("/api/tasks", methods=["GET"])
 def list_tasks():
     sort_by = request.args.get("sort")
@@ -57,14 +56,14 @@ def list_tasks():
             "effort_level": t["effort_level"],
             "start_after": t["start_after"],
             "category": t["category"],
-            "is_overdue": check_overdue(t["due_date"], t["status"])
+            "is_overdue": check_overdue(t["due_date"], t["status"]),
+            "description": t["description"],
+            "notes": t["notes"]
         }
         for t in tasks
     ]
     return jsonify(response), 200
 
-
-# POST create task
 @api.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.get_json(silent=True) or {}
@@ -77,6 +76,8 @@ def add_task():
     effort_level = (data.get("effort_level") or "Medium").strip()
     start_after = (data.get("start_after") or "").strip() or None
     category = (data.get("category") or "General").strip()
+    description = (data.get("description") or "").strip()
+    notes = (data.get("notes") or "").strip()
 
     if not title:
         return jsonify({"error": "Title is required."}), 400
@@ -96,13 +97,15 @@ def add_task():
         return jsonify({"error": "Effort level must be Low, Medium, or High."}), 400
 
     task = create_task(
-        title,
-        due_date,
-        priority,
-        duration_minutes,
-        effort_level,
-        start_after,
-        category
+        title=title,
+        due_date=due_date,
+        priority=priority,
+        duration_minutes=duration_minutes,
+        effort_level=effort_level,
+        start_after=start_after,
+        category=category,
+        description=description,
+        notes=notes
     )
 
     return jsonify({
@@ -114,10 +117,13 @@ def add_task():
         "duration_minutes": task["duration_minutes"],
         "effort_level": task["effort_level"],
         "start_after": task["start_after"],
-        "category": task["category"]
+        "category": task["category"],
+        "description": task["description"],
+        "notes": task["notes"]
     }), 201
 
-# PUT edit task
+
+
 @api.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def edit_task(task_id):
     data = request.get_json(silent=True) or {}
@@ -131,6 +137,8 @@ def edit_task(task_id):
     effort_level = (data.get("effort_level") or "Medium").strip()
     start_after = (data.get("start_after") or "").strip() or None
     category = (data.get("category") or "General").strip()
+    description = (data.get("description") or "").strip()
+    notes = (data.get("notes") or "").strip()
 
     if not title:
         return jsonify({"error": "Title is required."}), 400
@@ -152,15 +160,17 @@ def edit_task(task_id):
         return jsonify({"error": "Effort level must be Low, Medium, or High."}), 400
 
     updated = update_task(
-        task_id,
-        title,
-        due_date,
-        priority,
-        status,
-        duration_minutes,
-        effort_level,
-        start_after,
-        category
+        task_id=task_id,
+        title=title,
+        due_date=due_date,
+        priority=priority,
+        status=status,
+        duration_minutes=duration_minutes,
+        effort_level=effort_level,
+        start_after=start_after,
+        category=category,
+        description=description,
+        notes=notes
     )
 
     if not updated:
@@ -177,10 +187,11 @@ def edit_task(task_id):
             "duration_minutes": updated["duration_minutes"],
             "effort_level": updated["effort_level"],
             "start_after": updated["start_after"],
-            "category": updated["category"]
+            "category": updated["category"],
+            "description": updated["description"],
+            "notes": updated["notes"]
         }
     }), 200
-
 # DELETE task
 @api.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def remove_task(task_id):
@@ -222,3 +233,86 @@ def build_schedule():
         "schedule": schedule
     }), 200
 
+
+
+bp = Blueprint("routes", __name__)
+
+
+@bp.route("/api/tasks", methods=["POST"])
+def api_create_task():
+    data = request.get_json() or {}
+
+    title = data.get("title")
+    due_date = data.get("due_date")
+    priority = data.get("priority")
+    duration_minutes = data.get("duration_minutes", 60)
+    effort_level = data.get("effort_level", "Medium")
+    start_after = data.get("start_after")
+    category = data.get("category", "General")
+    description = data.get("description", "")
+    notes = data.get("notes", "")
+    link = data.get("link", "")
+
+    if not title or not due_date or not priority:
+        return jsonify({"error": "Title, due date, and priority are required."}), 400
+
+    try:
+        task = create_task(
+            title=title,
+            due_date=due_date,
+            priority=priority,
+            duration_minutes=duration_minutes,
+            effort_level=effort_level,
+            start_after=start_after,
+            category=category,
+            description=description,
+            notes=notes,
+            link=link
+        )
+        return jsonify(task), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@bp.route("/api/tasks/<int:task_id>", methods=["PUT"])
+def api_update_task(task_id):
+    data = request.get_json() or {}
+
+    title = data.get("title")
+    due_date = data.get("due_date")
+    priority = data.get("priority")
+    status = data.get("status")
+    duration_minutes = data.get("duration_minutes", 60)
+    effort_level = data.get("effort_level", "Medium")
+    start_after = data.get("start_after")
+    category = data.get("category", "General")
+    description = data.get("description", "")
+    notes = data.get("notes", "")
+    link = data.get("link", "")
+
+    if not title or not due_date or not priority or not status:
+        return jsonify({"error": "Missing required fields."}), 400
+
+    try:
+        task = update_task(
+            task_id=task_id,
+            title=title,
+            due_date=due_date,
+            priority=priority,
+            status=status,
+            duration_minutes=duration_minutes,
+            effort_level=effort_level,
+            start_after=start_after,
+            category=category,
+            description=description,
+            notes=notes,
+            link=link
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found."}), 404
+
+        return jsonify(task), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

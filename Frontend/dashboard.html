@@ -70,50 +70,94 @@
             </div>
           </div>
 
-      <div class="card recent-tasks-card">
-        <h2>Recent Tasks</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Due Date</th>
-              <th>Priority</th>
-            </tr>
-          </thead>
-          <tbody id="recentTasksBody">
-            <tr>
-              <td colspan="4">No tasks available.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <div class="recent-tasks-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
+                  <th>Priority</th>
+                </tr>
+              </thead>
+              <tbody id="recentTasksBody">
+                <tr>
+                  <td colspan="4">No tasks available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
+       
 
-    </section>
-    <section class="card">
-      <h2>Mission Progress</h2>
-      <div class="game-progress-wrap">
-        <div class="game-progress-bar">
-          <div id="progressFill" class="game-progress-fill"></div>
-        </div>
-        <div class="game-progress-meta">
-          <span id="progressPercent">0%</span>
-          <span id="progressText">0 / 0 tasks completed</span>
-        </div>
-      </div>
-    </section>
+        <section class="dashboard-side-column">
+          <article class="dashboard-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Action</p>
+                <h2>Quick Actions</h2>
+              </div>
+            </div>
 
-    <section class="row">
-      <div class="card" style="flex: 1;">
-        <h3>Quick Actions</h3>
-        <p><a href="tasks.html">Go to Task Manager</a></p>
-        <p><a href="schedule.html">Go to Schedule Planner</a></p>
-      </div>
+            <div class="dashboard-action-grid">
+              <a class="dashboard-action-card" href="tasks.html">
+                <span class="action-title">Task Manager</span>
+                <span class="action-desc">Create, edit, and organize your tasks.</span>
+              </a>
 
-      
-    </section>
-  </main>
+              <a class="dashboard-action-card" href="schedule.html">
+                <span class="action-title">Schedule Planner</span>
+                <span class="action-desc">Generate and review your weekly schedule.</span>
+              </a>
+            </div>
+          </article>
+
+          <article class="dashboard-panel progress-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Progress</p>
+                <h2>Mission Progress</h2>
+              </div>
+            </div>
+
+            <div class="game-progress-wrap">
+              <div class="game-progress-bar">
+                <div id="progressFill" class="game-progress-fill"></div>
+              </div>
+              <div class="game-progress-meta">
+                <span id="progressPercent">0%</span>
+                <span id="progressText">0 / 0 tasks completed</span>
+              </div>
+            </div>
+          </article>
+          <article class="dashboard-panel insights-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Insights</p>
+                <h2>Momentum Insights</h2>
+              </div>
+            </div>
+          
+            <div id="insightsList" class="insights-list">
+              <div class="insight-item">Loading insights...</div>
+            </div>
+          </article>
+
+          <article class="dashboard-panel quote-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-eyebrow">Focus</p>
+                <h2>Momentum Quote</h2>
+              </div>
+            </div>
+
+            <p id="dailyQuote" class="dashboard-quote">Loading inspiration...</p>
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
