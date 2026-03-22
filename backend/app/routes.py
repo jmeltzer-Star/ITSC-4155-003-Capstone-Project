@@ -30,6 +30,22 @@ def list_tasks():
     sort_by = request.args.get("sort")
     tasks = get_all_tasks(sort_by=sort_by)
 
+    from datetime import datetime
+    now = datetime.now()
+
+    def check_overdue(due_date, status):
+        if status == "Completed" or not due_date:
+            return False
+        normalized = due_date.strip().replace(" ", "T")
+        try:
+            dt = datetime.fromisoformat(normalized)
+        except ValueError:
+            try:
+                dt = datetime.strptime(due_date, "%Y-%m-%d %H:%M")
+            except ValueError:
+                return False
+        return dt < now
+
     response = [
         {
             "id": t["task_id"],
@@ -40,7 +56,8 @@ def list_tasks():
             "duration_minutes": t["duration_minutes"],
             "effort_level": t["effort_level"],
             "start_after": t["start_after"],
-            "category": t["category"]
+            "category": t["category"],
+            "is_overdue": check_overdue(t["due_date"], t["status"])
         }
         for t in tasks
     ]

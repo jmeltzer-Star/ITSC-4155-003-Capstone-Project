@@ -307,19 +307,6 @@ function detectScheduleConflicts(tasks) {
    or editing a task.
 ======================================================== */
 
-function isTaskOverdue(task) { 
-  if (!task.due_date || task.status === "Completed") {
-    return false;
-  }
-  const dueDate = new Date(task.due_date);
-  if (isNaN(dueDate.getTime())) {
-    return false; // Invalid date
-  }
-  const now = new Date();
-  return dueDate < now;
-}
-
-
 function validateFutureDate(inputValue, inlineMsgEl) {
   inlineMsgEl.textContent = "";
 
@@ -486,12 +473,20 @@ function renderTasks(tasks) {
     const row = document.createElement("tr");
     row.dataset.taskId = task.id;
 
-    let statusClass = "status-pending";
-    if (task.status === "In Progress") statusClass = "status-progress";
-    if (task.status === "Completed") statusClass = "status-completed";
+    const isOverdue = task.is_overdue;
 
+    let statusClass = "status-pending";
+    let statusText = task.status;
+    if (task.status === "In Progress") statusClass = "status-progress";
     if (task.status === "Completed") {
+      statusClass = "status-completed";
       row.classList.add("task-completed-row");
+    }
+
+    if (isOverdue && task.status !== "Completed") {
+      statusClass = "status-overdue";
+      statusText = "Overdue";
+      row.classList.add("task-overdue-row");
     }
 
     let priorityClass = "priority-low";
@@ -502,10 +497,12 @@ function renderTasks(tasks) {
       ? task.start_after
       : "No restriction";
 
+    const overdueDot = isOverdue ? '<span class="task-dot overdue"></span>' : '';
+
     row.innerHTML = `
       <td>
         <div class="task-title-cell">
-          <div class="task-main-title">${task.title}</div>
+          <div class="task-main-title">${overdueDot}${task.title}</div>
           <div class="task-meta">
             <span class="task-meta-pill">${task.category}</span>
             <span class="task-meta-pill">${task.duration_minutes} min</span>
@@ -514,7 +511,7 @@ function renderTasks(tasks) {
           </div>
         </div>
       </td>
-      <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+      <td><span class="status-badge ${statusClass}">${statusText}</span></td>
       <td>${task.due_date}</td>
       <td><span class="priority-pill ${priorityClass}">${task.priority}</span></td>
       <td class="actions-cell">

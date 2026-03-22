@@ -1114,6 +1114,11 @@ button {
 	opacity: 0.75;
   }
   
+  .task-overdue-row {
+	background: rgba(253, 230, 138, 0.1);
+	border-left: 3px solid #fde68a;
+  }
+  
   .actions-cell {
 	white-space: nowrap;
   }
@@ -3315,6 +3320,18 @@ button {
   
   .task-completed-row {
 	opacity: 0.82;
+  }
+
+  .task-overdue-row {
+	background: rgba(254, 243, 199, 0.6) !important;
+	border: 2px solid #f59e0b !important;
+	border-radius: 8px;
+  }
+
+  .status-badge.status-overdue {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #fcd34d;
   }
   
   .updated-row {
