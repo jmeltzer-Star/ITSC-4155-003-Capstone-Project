@@ -432,7 +432,7 @@ def generate_schedule(days=7, max_tasks_per_day=4):
     effort_order = {"High": 0, "Medium": 1, "Low": 2}
 
     today = datetime.now().date()
-    end_date = today + timedelta(days=days)
+    end_date = today + timedelta(days = days - 1)
 
     filtered_tasks = []
 
