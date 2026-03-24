@@ -226,6 +226,14 @@ from datetime import datetime, timedelta, time
 from .database import get_connection
 
 
+'''
+User Story #1 Implementation -- Creating a Task 
+
+Purpose: Create a Task with Data Values -- Add This to our Database 
+
+'''
+
+#Method for Create a Task(Chosen Fields: Title, Due Date, Priority, Duration, Effort Level, Effort Level, Start After, Category, Description, notes)
 def create_task(
     title,
     due_date,
@@ -236,7 +244,9 @@ def create_task(
     category="General",
     description="",
     notes=""
-):
+):  
+
+#Inserts our Tasks into our DB 
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -276,12 +286,19 @@ def create_task(
     conn.close()
     return dict(task)
 
+'''
+User Story #2: Creating a Lists Of Our Tasks -- Get all of the Tasks in Our Database
+
+'''
+
 
 def get_all_tasks(sort_by=None):
     conn = get_connection()
     cursor = conn.cursor()
 
     query = "SELECT * FROM tasks"
+
+    #Sorting Option here Either By Date or By Priority 
 
     if sort_by == "date":
         query += " ORDER BY due_date ASC"
@@ -302,6 +319,13 @@ def get_all_tasks(sort_by=None):
     conn.close()
     return tasks
 
+
+'''
+User Story #3: Edit Tasks 
+Purpose: Update an Existing Tasks Which is Already Existing in Our Database -- Update Any of the Existing Fields
+Flow: Connect to DB -- Execute Query to Update Fields Based on Input Field in Our Front End 
+
+'''
 
 def update_task(
     task_id,
@@ -356,10 +380,18 @@ def update_task(
     return dict(task) if task else None
 
 
+'''
+
+USer Story #4: Delete Task -- Gets Rid of Any Task Which We Don't Want In Our Database(For the User Any Tasks they don't want on their calendar)
+
+'''
+
+
 def delete_task(task_id):
     conn = get_connection()
     cursor = conn.cursor()
-
+    
+    #Query for executuing Deletion 
     cursor.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
     conn.commit()
 
@@ -369,6 +401,13 @@ def delete_task(task_id):
     return deleted
 
 
+'''
+User Story #12: Schedule Time Display 
+Purpose: Display Our Start and End Time in an Organized Format
+
+'''
+
+#This is a Helper Method for Formatting our Dates 
 def format_time_range(start_dt, duration_minutes):
     end_dt = start_dt + timedelta(minutes=duration_minutes)
     return (
@@ -376,18 +415,29 @@ def format_time_range(start_dt, duration_minutes):
         end_dt.strftime("%-I:%M %p")
     )
 
+'''
+
+User Story #13: Category Distribution 
+Purpose: Based on the Category of Our Tasks We Will Have Tasks Back to back unless we have to 
+
+'''
+
 
 def balance_categories(tasks):
     remaining = tasks[:]
     balanced = []
-
+   # Go Through List
     while remaining:
+        #If Nothing Has Been Taken Yet, Take Out First Element
         if not balanced:
             balanced.append(remaining.pop(0))
             continue
-
+        
+        #Check Category last Popped 
         last_category = balanced[-1]["category"]
+        
 
+        #Swap if similir, it not keep going
         swap_index = None
         for i, task in enumerate(remaining):
             if task["category"] != last_category:
@@ -402,6 +452,11 @@ def balance_categories(tasks):
     return balanced
 
 
+'''
+User Story #12: Schedule Display
+Purpose: Works in Cohesion With  format_time_range -- this will turn string into a datetme format -- then format_time_rnage will format into start-end time
+
+'''
 def parse_task_datetime(value):
     try:
         return datetime.strptime(value, "%Y-%m-%d %H:%M")
