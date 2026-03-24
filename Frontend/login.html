@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login | Momentum</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="app-page auth-page">
+  <div class="auth-shell">
+    <div class="auth-layout">
+      <section class="dashboard-panel auth-login-panel">
+        <div class="auth-login-glow"></div>
+
+        <div class="panel-header auth-login-header">
+          <div>
+            <p class="panel-eyebrow">Momentum Access</p>
+            <h2>Welcome back</h2>
+            <p class="auth-login-subtitle">
+              Log in to continue building momentum.
+            </p>
+          </div>
+        </div>
+
+        <form id="loginForm" class="modern-task-form auth-form-modern">
+          <div class="form-grid auth-form-grid">
+            <label class="full-width">
+              <span>Username</span>
+              <div class="input-icon-wrap">
+                <span class="input-icon">👤</span>
+                <input
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  class="auth-input-modern"
+                />
+              </div>
+            </label>
+
+            <label class="full-width">
+              <span>Password</span>
+              <div class="input-icon-wrap password-wrap">
+                <span class="input-icon">🔒</span>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  class="auth-input-modern"
+                />
+                <button type="button" id="togglePasswordBtn" class="password-toggle-btn">
+                  Show
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <button type="submit" class="generate-btn auth-login-btn">
+            Login
+          </button>
+
+          <p class="auth-helper-text">
+            Demo login: <strong>admin</strong> / <strong>momentum123</strong>
+          </p>
+
+          <p id="loginMessage" class="message"></p>
+        </form>
+      </section>
+
+      <section class="auth-hero auth-login-hero">
+        <div class="auth-hero-content">
+          <div class="hero-badge">Focused planning. Smarter execution.</div>
+          <h1>Plan better. Move faster. Stay in control.</h1>
+          <p>
+            Momentum helps you organize tasks, manage schedules, and keep your week moving with clarity.
+          </p>
+
+          <div class="login-feature-chips">
+            <div class="login-chip">Smart Scheduling</div>
+            <div class="login-chip">Task Insights</div>
+            <div class="login-chip">Progress Tracking</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("loginForm");
+      const message = document.getElementById("loginMessage");
+      const togglePasswordBtn = document.getElementById("togglePasswordBtn");
+      const passwordInput = document.getElementById("password");
+
+      if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", () => {
+          const isHidden = passwordInput.type === "password";
+          passwordInput.type = isHidden ? "text" : "password";
+          togglePasswordBtn.textContent = isHidden ? "Hide" : "Show";
+        });
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const password = passwordInput.value.trim();
+
+        message.textContent = "";
+        message.className = "message";
+
+        try {
+          const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ username, password })
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            message.textContent = "✓ Login successful!";
+            message.classList.add("success");
+
+            setTimeout(() => {
+              window.location.href = "/dashboard.html";
+            }, 500);
+          } else {
+            message.textContent = data.error || "Login failed.";
+            message.classList.add("error");
+          }
+        } catch (err) {
+          console.error("login error:", err);
+          message.textContent = "Server error. Try again.";
+          message.classList.add("error");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

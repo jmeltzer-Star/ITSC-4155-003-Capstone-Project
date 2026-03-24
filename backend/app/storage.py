@@ -221,7 +221,121 @@ Utility / Helper Layer
 ========================================================
 """
 
+"""
+========================================================
+USER STORY → FUNCTION MAPPING (Momentum Backend)
+========================================================
+
+-------------------------------
+TASK MANAGEMENT
+-------------------------------
+
+User Story: Create Task
+- Inserts a new task into the database with default status
+- Supports description and notes fields
+- Returns the created task record
+→ create_task()
+
+User Story: View Tasks
+- Retrieves all stored tasks from the database
+- Supports optional sorting
+→ get_all_tasks()
+
+User Story: Edit Task
+- Updates an existing task in the database
+- Supports updating description and notes
+- Returns the updated task record
+→ update_task()
+
+User Story: Delete Task
+- Removes a task from the database
+- Returns whether deletion succeeded
+→ delete_task()
+
+
+-------------------------------
+SCHEDULE GENERATION
+-------------------------------
+
+User Story: Generate Schedule
+- Builds a schedule using due date, priority, effort level,
+  duration, category, and start constraints
+→ generate_schedule()
+
+User Story: Duration-Based Scheduling
+- Assigns start/end times based on task duration
+→ assign_times_for_day()
+→ format_time_range()
+
+User Story: Effort-Level Scheduling
+- Prioritizes higher-effort tasks when due date and priority
+  are otherwise equal
+→ generate_schedule()
+
+User Story: Priority-Based Scheduling
+- Orders tasks using due date first, then priority
+→ generate_schedule()
+
+User Story: Start Constraint Scheduling
+- Prevents a task from being scheduled before its allowed
+  start date/time
+→ parse_task_datetime()
+→ generate_schedule()
+
+User Story: Max Tasks Per Day
+- Limits how many tasks can be placed on a single day
+→ generate_schedule()
+
+User Story: Multi-Day Task Distribution
+- Spreads tasks across the selected schedule range
+→ generate_schedule()
+
+
+-------------------------------
+SCHEDULE ORGANIZATION
+-------------------------------
+
+User Story: Category Balancing
+- Reorders tasks within a day to avoid clustering the same
+  category back-to-back when possible
+→ balance_categories()
+
+User Story: Time Range Formatting
+- Converts calculated start/end datetimes into readable
+  strings for the frontend calendar
+→ format_time_range()
+
+User Story: Datetime Parsing
+- Converts stored task datetime strings into Python datetime
+  objects for scheduling comparisons
+→ parse_task_datetime()
+
+
+-------------------------------
+ARCHITECTURE NOTE
+-------------------------------
+
+Database Layer
+- create_task()
+- get_all_tasks()
+- update_task()
+- delete_task()
+
+Scheduling Logic Layer
+- generate_schedule()
+- balance_categories()
+- assign_times_for_day()
+
+Utility / Helper Layer
+- parse_task_datetime()
+- format_time_range()
+
+========================================================
+"""
+
 from datetime import datetime, timedelta, time
+
+from .database import get_connection
 
 from .database import get_connection
 
@@ -259,6 +373,9 @@ def create_task(
             duration_minutes,
             effort_level,
             start_after,
+            category,
+            description,
+            notes
             category,
             description,
             notes
@@ -310,6 +427,7 @@ def get_all_tasks(sort_by=None):
             WHEN 'Medium' THEN 2
             WHEN 'Low' THEN 3
             ELSE 99
+            ELSE 99
         END
         """
 
@@ -356,6 +474,9 @@ def update_task(
             category = ?,
             description = ?,
             notes = ?
+            category = ?,
+            description = ?,
+            notes = ?
         WHERE task_id = ?
     """, (
         title,
@@ -366,6 +487,8 @@ def update_task(
         effort_level,
         start_after,
         category,
+        description,
+        notes,
         description,
         notes,
         task_id
@@ -475,6 +598,7 @@ def assign_times_for_day(tasks, day_date):
         current_start += timedelta(minutes=duration_minutes)
 
     return tasks
+
 
 
 def generate_schedule(days=7, max_tasks_per_day=4):

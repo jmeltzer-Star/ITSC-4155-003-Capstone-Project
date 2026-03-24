@@ -1,20 +1,20 @@
-#Purpose of Routes.py: Establish All Our Routes for Using Flask | These are Essentially How Users/Data Are  Moved Throughout Our Entire Application 
-
-
-
-
 from datetime import datetime
 from functools import wraps
 from flask import Blueprint, jsonify, request, send_from_directory, session
 from .storage import create_task, get_all_tasks, update_task, delete_task, generate_schedule
 
+# Main blueprints
 api = Blueprint("api", __name__)
 auth = Blueprint("auth", __name__)
 
 TEST_USERNAME = "admin"
 TEST_PASSWORD = "momentum123"
 
-#Handles user Logins | Takes Data -- Takes Username and Password | Returns Error if No match with Our System
+
+# =========================
+# AUTH ROUTES
+# =========================
+
 @auth.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
@@ -24,7 +24,7 @@ def login():
 
     if username != TEST_USERNAME or password != TEST_PASSWORD:
         return jsonify({"error": "Invalid credentials"}), 401
-    #Creates Session
+
     session["user"] = username
 
     return jsonify({
@@ -32,7 +32,7 @@ def login():
         "user": username
     }), 200
 
-#This is what Actually Routes the User to Our Login Section( Then our Login Method will allow then to login)
+
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -42,15 +42,13 @@ def login_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-#THis Our Route for When Users Logout | 
+
 @auth.route("/api/logout", methods=["POST"])
 def logout():
-    #Gets Rid of Our Users Sessions
     session.pop("user", None)
     return jsonify({"message": "Logged out successfully"}), 200
 
 
-#authentication Route For Verify the User is Here(Flow: Sent to Login  --  Required to Login -- Verification  )
 @auth.route("/api/me", methods=["GET"])
 def me():
     user = session.get("user")
@@ -76,22 +74,21 @@ def index():
     return send_from_directory("../../frontend", "index.html")
 
 
-#Route For Sending to DashBoard HTML
 @api.route("/dashboard.html", methods=["GET"])
 def dashboard_page():
     return send_from_directory("../../frontend", "dashboard.html")
 
-#Route for our Tasks 
+
 @api.route("/tasks.html", methods=["GET"])
 def tasks_page():
     return send_from_directory("../../frontend", "tasks.html")
 
-#Routes for our Schedule
+
 @api.route("/schedule.html", methods=["GET"])
 def schedule_page():
     return send_from_directory("../../frontend", "schedule.html")
 
-#Routes for our Login | This is where the user has to go to actually login 
+
 @api.route("/login.html", methods=["GET"])
 def login_page():
     return send_from_directory("../../frontend", "login.html")
@@ -110,16 +107,13 @@ def health():
 # TASK ROUTES
 # =========================
 
-
-#This the Route for Our Tasks
 @api.route("/api/tasks", methods=["GET"])
 @login_required
 def list_tasks():
-    #Logic for sorting our tasks when saved
     sort_by = request.args.get("sort")
     tasks = get_all_tasks(sort_by=sort_by)
     now = datetime.now()
-    #OverDue Check on Our Current Saved assignemnts
+
     def check_overdue(due_date, status):
         if status == "Completed" or not due_date:
             return False
@@ -135,7 +129,7 @@ def list_tasks():
                 return False
 
         return dt < now
-        #This is the Data the USer Will See When Creating a Tasks
+
     response = [
         {
             "id": t["task_id"],
@@ -157,7 +151,6 @@ def list_tasks():
     return jsonify(response), 200
 
 
-
 @api.route("/api/tasks", methods=["POST"])
 @login_required
 def add_task():
@@ -166,7 +159,6 @@ def add_task():
     title = (data.get("title") or "").strip()
     due_date = (data.get("due_date") or "").strip()
     priority = (data.get("priority") or "").strip()
-
     duration_minutes = data.get("duration_minutes", 60)
     effort_level = (data.get("effort_level") or "Medium").strip()
     start_after = (data.get("start_after") or "").strip() or None
@@ -229,7 +221,6 @@ def edit_task(task_id):
     due_date = (data.get("due_date") or "").strip()
     priority = (data.get("priority") or "").strip()
     status = (data.get("status") or "").strip()
-
     duration_minutes = data.get("duration_minutes", 60)
     effort_level = (data.get("effort_level") or "Medium").strip()
     start_after = (data.get("start_after") or "").strip() or None
