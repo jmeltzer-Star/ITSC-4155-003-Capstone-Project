@@ -334,20 +334,9 @@ Utility / Helper Layer
 """
 
 from datetime import datetime, timedelta, time
-
-from .database import get_connection
-
 from .database import get_connection
 
 
-'''
-User Story #1 Implementation -- Creating a Task 
-
-Purpose: Create a Task with Data Values -- Add This to our Database 
-
-'''
-
-#Method for Create a Task(Chosen Fields: Title, Due Date, Priority, Duration, Effort Level, Effort Level, Start After, Category, Description, notes)
 def create_task(
     title,
     due_date,
@@ -358,9 +347,7 @@ def create_task(
     category="General",
     description="",
     notes=""
-):  
-
-#Inserts our Tasks into our DB 
+):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -373,9 +360,6 @@ def create_task(
             duration_minutes,
             effort_level,
             start_after,
-            category,
-            description,
-            notes
             category,
             description,
             notes
@@ -403,19 +387,12 @@ def create_task(
     conn.close()
     return dict(task)
 
-'''
-User Story #2: Creating a Lists Of Our Tasks -- Get all of the Tasks in Our Database
-
-'''
-
 
 def get_all_tasks(sort_by=None):
     conn = get_connection()
     cursor = conn.cursor()
 
     query = "SELECT * FROM tasks"
-
-    #Sorting Option here Either By Date or By Priority 
 
     if sort_by == "date":
         query += " ORDER BY due_date ASC"
@@ -427,7 +404,6 @@ def get_all_tasks(sort_by=None):
             WHEN 'Medium' THEN 2
             WHEN 'Low' THEN 3
             ELSE 99
-            ELSE 99
         END
         """
 
@@ -437,13 +413,6 @@ def get_all_tasks(sort_by=None):
     conn.close()
     return tasks
 
-
-'''
-User Story #3: Edit Tasks 
-Purpose: Update an Existing Tasks Which is Already Existing in Our Database -- Update Any of the Existing Fields
-Flow: Connect to DB -- Execute Query to Update Fields Based on Input Field in Our Front End 
-
-'''
 
 def update_task(
     task_id,
@@ -474,9 +443,6 @@ def update_task(
             category = ?,
             description = ?,
             notes = ?
-            category = ?,
-            description = ?,
-            notes = ?
         WHERE task_id = ?
     """, (
         title,
@@ -489,8 +455,6 @@ def update_task(
         category,
         description,
         notes,
-        description,
-        notes,
         task_id
     ))
 
@@ -501,7 +465,6 @@ def update_task(
 
     conn.close()
     return dict(task) if task else None
-
 
 '''
 
