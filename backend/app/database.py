@@ -38,6 +38,9 @@ def init_db():
     cursor.execute("PRAGMA table_info(tasks)")
     columns = [col[1] for col in cursor.fetchall()]
 
+    if "start_after" not in columns:
+    cursor.execute("ALTER TABLE tasks ADD COLUMN start_after TEXT")
+
     if "description" not in columns:
         cursor.execute("ALTER TABLE tasks ADD COLUMN description TEXT")
 
