@@ -252,13 +252,6 @@ def is_valid_datetime_string(value):
     except (TypeError, ValueError):
         return False
 
-def is_valid_datetime_string(value):
-    try:
-        datetime.strptime(value, "%Y-%m-%d %H:%M")
-        return True
-    except (TypeError, ValueError):
-        return False
-
 
 # -----------------------------------------------
 # Route: Landing Page
