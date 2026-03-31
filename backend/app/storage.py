@@ -620,7 +620,7 @@ def generate_schedule(days=7, max_tasks_per_day=4):
         start_after_dt = parse_task_datetime(task.get("start_after"))
         start_after_date = start_after_dt.date() if start_after_dt else today
 
-        if today <= task_due <= end_date and start_after_date <= end_date:
+        if today <= task_due <= end_date:
             filtered_tasks.append(task)
 
     # Sort by due date, priority, then effort
