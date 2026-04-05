@@ -274,65 +274,45 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(len(all_tasks), 0)
 
     
-    # Unit Test for Duration Based Scheduling
     def test_duration_based_scheduling(self):
         self.login()
 
-        now = datetime.now()
-        due_a = (now + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")
-        due_b = (now + timedelta(hours=4)).strftime("%Y-%m-%d %H:%M")
+        tomorrow = datetime.now().date() + timedelta(days=1)
+        due_date = datetime.combine(
+        tomorrow,
+        datetime.strptime("3:00 PM", "%I:%M %p").time()
+        ).strftime("%Y-%m-%d %H:%M")
 
-        self.client.post("/api/tasks", json={
-            "title": "Task A",
-            "due_date": due_a,
-            "priority": "High",
-            "duration_minutes": 30,
-            "effort_level": "Medium",
-            "start_after": "",
-            "category": "General",
-            "description": "",
-            "notes": ""
+        res = self.client.post("/api/tasks", json={
+        "title": "Long Task",
+        "due_date": due_date,
+        "priority": "High",
+        "duration_minutes": 120,
+        "effort_level": "Medium",
+        "start_after": "",
+        "category": "General",
+        "description": "",
+        "notes": ""
         })
+        self.assertEqual(res.status_code, 201)
 
-        self.client.post("/api/tasks", json={
-            "title": "Task B",
-            "due_date": due_b,
-            "priority": "Medium",
-            "duration_minutes": 90,
-            "effort_level": "Medium",
-            "start_after": "",
-            "category": "General",
-            "description": "",
-            "notes": ""
-        })
-
-        res = self.client.post("/api/schedule", json={
-            "days": 1,
+        schedule_res = self.client.post("/api/schedule", json={
+            "days": 7,
             "max_tasks_per_day": 5
         })
+        self.assertEqual(schedule_res.status_code, 200)
 
-        self.assertEqual(res.status_code, 200)
-
-        data = res.get_json()
-        schedule = data["schedule"]
-
+        schedule = schedule_res.get_json()["schedule"]
         self.assertTrue(len(schedule) > 0)
 
         day = list(schedule.keys())[0]
         tasks = schedule[day]
 
-        self.assertEqual(len(tasks), 2)
+        self.assertEqual(len(tasks), 1)
 
-        task_a = tasks[0]
-        task_b = tasks[1]
-
-        self.assertEqual(task_a["scheduled_start"], "9:00 AM")
-        self.assertEqual(task_a["scheduled_end"], "9:30 AM")
-
-        self.assertEqual(task_b["scheduled_start"], "9:30 AM")
-        self.assertEqual(task_b["scheduled_end"], "11:00 AM")
-
-        self.assertEqual(task_a["scheduled_end"], task_b["scheduled_start"])
+        task = tasks[0]
+        self.assertEqual(task["scheduled_start"], "9:00 AM")
+        self.assertEqual(task["scheduled_end"], "11:00 AM")
 
     def time_to_minutes(self, time_str):
         time_part, meridiem = time_str.split(" ")
@@ -548,39 +528,39 @@ class ApiTests(unittest.TestCase):
 
         self.login()
 
-        now = datetime.now()
-        due_a = (now + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")
-        due_b = (now + timedelta(hours=4)).strftime("%Y-%m-%d %H:%M")
+        tomorrow = datetime.now().date() + timedelta(days=1)
+        due_a = datetime.combine(tomorrow, datetime.strptime("12:00", "%H:%M").time()).strftime("%Y-%m-%d %H:%M")
+        due_b = datetime.combine(tomorrow, datetime.strptime("3:00 PM", "%I:%M %p").time()).strftime("%Y-%m-%d %H:%M")
 
         res_a = self.client.post("/api/tasks", json={
-            "title": "Task A",
-            "due_date": due_a,
-            "priority": "High",
-            "duration_minutes": 30,
-            "effort_level": "Medium",
-            "start_after": "",
-            "category": "General",
-            "description": "",
-            "notes": ""
+        "title": "Task A",
+        "due_date": due_a,
+        "priority": "High",
+        "duration_minutes": 30,
+        "effort_level": "Medium",
+        "start_after": "",
+        "category": "General",
+        "description": "",
+        "notes": ""
         })
         self.assertEqual(res_a.status_code, 201)
 
         res_b = self.client.post("/api/tasks", json={
-            "title": "Task B",
-            "due_date": due_b,
-            "priority": "Medium",
-            "duration_minutes": 90,
-            "effort_level": "Medium",
-            "start_after": "",
-            "category": "General",
-            "description": "",
-            "notes": ""
+        "title": "Task B",
+        "due_date": due_b,
+        "priority": "Medium",
+        "duration_minutes": 90,
+        "effort_level": "Medium",
+        "start_after": "",
+        "category": "General",
+        "description": "",
+        "notes": ""
         })
         self.assertEqual(res_b.status_code, 201)
 
         res = self.client.post("/api/schedule", json={
-            "days": 1,
-            "max_tasks_per_day": 5
+        "days": 7,
+        "max_tasks_per_day": 5
         })
         self.assertEqual(res.status_code, 200)
 
@@ -602,22 +582,21 @@ class ApiTests(unittest.TestCase):
 
         self.assertEqual(task_a["scheduled_end"], task_b["scheduled_start"])
 
-        # AC 4: longer task gets longer block than shorter task
-        def to_minutes(time_str):
-            time_part, meridiem = time_str.split(" ")
-            hours, minutes = map(int, time_part.split(":"))
-            if meridiem == "PM" and hours != 12:
-                hours += 12
-            if meridiem == "AM" and hours == 12:
-                hours = 0
-            return hours * 60 + minutes
+    def to_minutes(time_str):
+        time_part, meridiem = time_str.split(" ")
+        hours, minutes = map(int, time_part.split(":"))
+        if meridiem == "PM" and hours != 12:
+            hours += 12
+        if meridiem == "AM" and hours == 12:
+            hours = 0
+        return hours * 60 + minutes
 
         task_a_length = to_minutes(task_a["scheduled_end"]) - to_minutes(task_a["scheduled_start"])
         task_b_length = to_minutes(task_b["scheduled_end"]) - to_minutes(task_b["scheduled_start"])
 
         self.assertEqual(task_a_length, 30)
         self.assertEqual(task_b_length, 90)
-        self.assertGreater(task_b_length, task_a_length)
+        self.assertGreater(task_b_length, task_a_length)    
 
     def test_effort_level_scheduling_story(self):
         """
@@ -844,9 +823,13 @@ class ApiTests(unittest.TestCase):
     #Intgegrates Test #4: Creating Schedule with Different Priorities
     def test_schedule_prioritizes_higher_effort_when_due_date_and_priority_match(self):
         self.login()
+
+        from datetime import datetime, timedelta
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
         self.client.post("/api/tasks", json={
         "title": "High Effort Task",
-        "due_date": "2026-04-01 17:00",
+        "due_date": future_date,
         "priority": "Medium",
         "duration_minutes": 60,
         "effort_level": "High",
@@ -854,11 +837,11 @@ class ApiTests(unittest.TestCase):
         "category": "School",
         "description": "",
         "notes": ""
-    })
+        })
 
         self.client.post("/api/tasks", json={
         "title": "Low Effort Task",
-        "due_date": "2026-04-01 17:00",
+        "due_date": future_date,
         "priority": "Medium",
         "duration_minutes": 60,
         "effort_level": "Low",
@@ -866,26 +849,236 @@ class ApiTests(unittest.TestCase):
         "category": "School",
         "description": "",
         "notes": ""
-    })
+        })
 
         schedule_res = self.client.post("/api/schedule", json={
-            "days": 7,
-            "max_tasks_per_day": 4
-    })
+        "days": 7,
+        "max_tasks_per_day": 4
+        })
 
         self.assertEqual(schedule_res.status_code, 200)
         data = schedule_res.get_json()
 
+        schedule = data.get("schedule", {})
         all_scheduled = []
-        for day_tasks in data["schedule"].values():
+        for day_tasks in schedule.values():
             all_scheduled.extend(day_tasks)
 
         titles = [task["title"] for task in all_scheduled]
 
+        self.assertIn("High Effort Task", titles)
+        self.assertIn("Low Effort Task", titles)
+
         self.assertLess(
-            titles.index("High Effort Task"),
-            titles.index("Low Effort Task")
-        )
+        titles.index("High Effort Task"),
+        titles.index("Low Effort Task")
+    )
+
+    # ========================================================
+# BLACK BOX TESTING / EQUIVALENCE PARTITIONING
+# ========================================================
+
+    def test_bb_create_task_valid_partition(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        res = self.client.post("/api/tasks", json={
+        "title": "Math Homework",
+        "due_date": future_date,
+        "priority": "High",
+        "duration_minutes": 60,
+        "effort_level": "Medium",
+        "start_after": None,
+        "category": "School",
+        "description": "Chapter 5 problems",
+        "notes": "Bring calculator"
+        })
+
+        self.assertEqual(res.status_code, 201)
+        data = res.get_json()
+        self.assertIn("id", data)
+
+
+    def test_bb_create_task_invalid_empty_title(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        res = self.client.post("/api/tasks", json={
+        "title": "",
+        "due_date": future_date,
+        "priority": "High",
+        "duration_minutes": 60,
+        "effort_level": "Medium",
+        "start_after": None,
+        "category": "School",
+        "description": "",
+        "notes": ""
+        })
+
+        self.assertNotEqual(res.status_code, 201)
+
+
+
+
+    def test_bb_create_task_invalid_duration_zero(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        res = self.client.post("/api/tasks", json={
+        "title": "Bad Duration",
+        "due_date": future_date,
+        "priority": "Medium",
+        "duration_minutes": 0,
+        "effort_level": "Low",
+        "start_after": None,
+        "category": "General",
+        "description": "",
+        "notes": ""
+        })
+
+        self.assertNotEqual(res.status_code, 201)
+
+
+    def test_bb_edit_task_valid_partition(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+        updated_date = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d %H:%M")
+
+        create_res = self.client.post("/api/tasks", json={
+        "title": "Original Task",
+        "due_date": future_date,
+        "priority": "Medium",
+        "duration_minutes": 60,
+        "effort_level": "Medium",
+        "start_after": None,
+        "category": "General",
+        "description": "",
+        "notes": ""
+        })
+
+        self.assertEqual(create_res.status_code, 201)
+        task_id = create_res.get_json()["id"]
+
+        update_res = self.client.put(f"/api/tasks/{task_id}", json={
+        "title": "Updated Task",
+        "due_date": updated_date,
+        "priority": "High",
+        "status": "In Progress",
+        "duration_minutes": 90,
+        "effort_level": "High",
+        "start_after": None,
+        "category": "School",
+        "description": "Updated description",
+        "notes": "Updated notes"
+        })
+
+        self.assertEqual(update_res.status_code, 200)
+
+
+    def test_bb_delete_task_valid_partition(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        create_res = self.client.post("/api/tasks", json={
+        "title": "Delete Me",
+        "due_date": future_date,
+        "priority": "Low",
+        "duration_minutes": 30,
+        "effort_level": "Low",
+        "start_after": None,
+        "category": "Personal",
+        "description": "",
+        "notes": ""
+        })
+
+        self.assertEqual(create_res.status_code, 201)
+        task_id = create_res.get_json()["id"]
+
+        delete_res = self.client.delete(f"/api/tasks/{task_id}")
+        self.assertEqual(delete_res.status_code, 200)
+
+
+    def test_bb_delete_task_invalid_nonexistent_id(self):
+        self.login()
+
+        res = self.client.delete("/api/tasks/999999")
+        self.assertNotEqual(res.status_code, 200)
+
+
+    def test_bb_search_valid_partial_title_partition(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        self.client.post("/api/tasks", json={
+        "title": "Math Homework",
+        "due_date": future_date,
+        "priority": "High",
+        "duration_minutes": 60,
+        "effort_level": "Medium",
+        "start_after": None,
+        "category": "School",
+        "description": "Algebra",
+        "notes": "Unit 3"
+            })
+
+        res = self.client.get("/api/tasks")
+        self.assertEqual(res.status_code, 200)
+
+        tasks = res.get_json()
+        filtered = [t for t in tasks if "math" in t["title"].lower()]
+
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["title"], "Math Homework")
+
+
+    def test_bb_schedule_valid_partition(self):
+        self.login()
+
+        future_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M")
+
+        self.client.post("/api/tasks", json={
+        "title": "Task A",
+        "due_date": future_date,
+        "priority": "High",
+        "duration_minutes": 60,
+        "effort_level": "High",
+        "start_after": None,
+        "category": "School",
+        "description": "",
+        "notes": ""
+        })
+
+        res = self.client.post("/api/schedule", json={
+        "days": 7,
+        "max_tasks_per_day": 4
+        })
+
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertIn("schedule", data)
+
+
+    def test_bb_schedule_invalid_max_tasks_partition(self):
+        self.login()
+
+        res = self.client.post("/api/schedule", json={
+        "days": 7,
+        "max_tasks_per_day": 0
+        })
+
+        self.assertEqual(res.status_code, 400)
+
+
+    
+
+
+
 
 
 if __name__ == "__main__":

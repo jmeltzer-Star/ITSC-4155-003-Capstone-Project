@@ -168,6 +168,7 @@ const form = document.getElementById("taskForm");
 const msg = document.getElementById("message");
 const tbody = document.getElementById("taskTableBody");
 const sortSelect = document.getElementById("sortSelect");
+const taskSearchInput = document.getElementById("taskSearchInput");
 
 // --- Task Editing Elements ---
 const editSection = document.getElementById("editTaskSection");
@@ -411,31 +412,111 @@ async function loadTaskTable() {
   if (!tbody) return;
 
   const sort = sortSelect ? sortSelect.value : "";
-  let tasks = await fetchTasks(sort); // Original fetch line
+  let tasks = await fetchTasks(sort);
 
-  // --- SEARCH FILTERING LOGIC ---
-  const searchInput = document.querySelector('input[placeholder*="Search tasks"]');
-  const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+  const searchTerm = taskSearchInput ? taskSearchInput.value.trim().toLowerCase() : "";
 
   if (searchTerm) {
     tasks = tasks.filter(task => {
       return (
-        task.title.toLowerCase().includes(searchTerm) ||
+        (task.title && task.title.toLowerCase().includes(searchTerm)) ||
         (task.category && task.category.toLowerCase().includes(searchTerm)) ||
         (task.notes && task.notes.toLowerCase().includes(searchTerm)) ||
-        (task.description && task.description.toLowerCase().includes(searchTerm))
+        (task.description && task.description.toLowerCase().includes(searchTerm)) ||
+        (task.status && task.status.toLowerCase().includes(searchTerm)) ||
+        (task.priority && task.priority.toLowerCase().includes(searchTerm))
       );
     });
   }
-  // --- END OF SEARCH LOGIC ---
 
   if (!tasks.length) {
-    tbody.innerHTML = `<tr><td colspan="5">No tasks found matching "${searchTerm}".</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5">No tasks found${searchTerm ? ` matching "${searchTerm}"` : "."}</td>
+      </tr>
+    `;
+    renderAssignmentCollections([]);
     return;
   }
 
   renderTasks(tasks);
   renderAssignmentCollections(tasks);
+}
+
+
+function renderAlerts(timeConflicts = [], capacityConflicts = [], unscheduledTasks = []) {
+  const alertsContent = document.getElementById("alertsContent");
+  if (!alertsContent) return;
+
+  const hasTimeConflicts = timeConflicts.length > 0;
+  const hasCapacityConflicts = capacityConflicts.length > 0;
+
+  if (!hasTimeConflicts && !hasCapacityConflicts) {
+    alertsContent.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+
+  if (hasTimeConflicts) {
+    html += `
+      <div class="alert-group">
+        <div class="alert-group-header">
+          <p class="panel-eyebrow">Conflicts</p>
+          <h2>Conflict Alerts</h2>
+        </div>
+
+        <div class="alert-card alert-card-danger">
+          <div class="alert-card-title">Schedule conflict detected</div>
+          <div class="alert-list">
+            ${timeConflicts.map(conflict => `
+              <div class="alert-item">
+                <div class="alert-item-title">
+                  ${conflict.firstTask.title} overlaps with ${conflict.secondTask.title}
+                </div>
+                <div class="alert-item-meta">
+                  ${conflict.firstTask.scheduled_start} – ${conflict.firstTask.scheduled_end}
+                  and
+                  ${conflict.secondTask.scheduled_start} – ${conflict.secondTask.scheduled_end}
+                  on ${conflict.dayKey}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (hasCapacityConflicts) {
+    html += `
+      <div class="alert-group">
+        <div class="alert-group-header">
+          <p class="panel-eyebrow">Capacity</p>
+          <h2>Scheduling Limits</h2>
+        </div>
+
+        <div class="alert-card alert-card-warning">
+          <div class="alert-card-title">${capacityConflicts[0].message}</div>
+
+          ${unscheduledTasks.length ? `
+            <div class="alert-list">
+              ${unscheduledTasks.map(task => `
+                <div class="alert-item">
+                  <div class="alert-item-title">${task.title}</div>
+                  <div class="alert-item-meta">
+                    Due: ${task.due_date} | Priority: ${task.priority} | Effort: ${task.effort_level}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  alertsContent.innerHTML = html;
 }
 
 
@@ -1064,12 +1145,10 @@ function openEditForm(task) {
 
   editTaskId.value = task.id;
   editTitle.value = task.title;
-  editDueDate.value = task.due_date || "";
   editPriority.value = task.priority;
   editStatus.value = task.status;
   editDurationMinutes.value = task.duration_minutes ?? 60;
   editEffortLevel.value = task.effort_level ?? "Medium";
-  editStartAfter.value = task.start_after || "";
   editCategory.value = task.category ?? "General";
 
   if (editDescription) {
@@ -1080,11 +1159,26 @@ function openEditForm(task) {
     editNotes.value = task.notes ?? "";
   }
 
+  if (editDueDate && editDueDate._flatpickr) {
+    editDueDate._flatpickr.setDate(task.due_date || "", true, "Y-m-d H:i");
+  } else if (editDueDate) {
+    editDueDate.value = task.due_date || "";
+  }
+
+  if (editStartAfter && editStartAfter._flatpickr) {
+    editStartAfter._flatpickr.setDate(task.start_after || "", true, "Y-m-d H:i");
+  } else if (editStartAfter) {
+    editStartAfter.value = task.start_after || "";
+  }
+
   originalTaskData = { ...task };
 
   editMessage.textContent = "";
   editMessage.className = "message";
-  editDueDateMsg.textContent = "";
+
+  if (editDueDateMsg) {
+    editDueDateMsg.textContent = "";
+  }
 
   editSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1281,6 +1375,17 @@ if (cancelEditBtn) {
 // ---------- Sorting ----------
 if (sortSelect) {
   sortSelect.addEventListener("change", loadTaskTable);
+}
+
+if (taskSearchInput) {
+  taskSearchInput.addEventListener("input", loadTaskTable);
+
+  taskSearchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadTaskTable();
+    }
+  });
 }
 
 /*
@@ -1837,10 +1942,10 @@ async function handleGenerateSchedule() {
   const max_tasks_per_day = maxTasksPerDay ? Number(maxTasksPerDay.value) : 4;
 
   if (!max_tasks_per_day || max_tasks_per_day <= 0) {
-  scheduleMessage.textContent = "Max tasks per day must be a positive number.";
-  scheduleMessage.className = "message error";
-  return;
-}
+    scheduleMessage.textContent = "Max tasks per day must be a positive number.";
+    scheduleMessage.className = "message error";
+    return;
+  }
 
   try {
     const res = await fetch("/api/schedule", {
@@ -1873,10 +1978,18 @@ async function handleGenerateSchedule() {
     renderSchedule(scheduleData);
     updateScheduleLoad(scheduleData);
     generateScheduleSummary(scheduleData);
-    
+
+    // Existing time conflicts
+    const timeConflicts = detectAllScheduleConflicts(scheduleData);
+    renderConflictAlerts(timeConflicts);
+
+    // New capacity conflicts
+    const capacityConflicts = data.capacity_conflicts || [];
+    renderCapacityConflicts(capacityConflicts, data.unscheduled_tasks || []);
+
     localStorage.setItem("momentumScheduleRange", String(days));
-localStorage.setItem("momentumMaxTasksPerDay", String(max_tasks_per_day));
-localStorage.setItem("momentumScheduleGenerated", "true");
+    localStorage.setItem("momentumMaxTasksPerDay", String(max_tasks_per_day));
+    localStorage.setItem("momentumScheduleGenerated", "true");
   } catch (err) {
     console.error(err);
 
@@ -1895,6 +2008,46 @@ localStorage.setItem("momentumScheduleGenerated", "true");
 if (generateScheduleBtn) {
   generateScheduleBtn.addEventListener("click", handleGenerateSchedule);
 }
+
+
+
+function renderCapacityConflicts(capacityConflicts, unscheduledTasks) {
+  const container = document.getElementById("capacityConflictOutput");
+  if (!container) return;
+
+  if (!capacityConflicts.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const conflict = capacityConflicts[0];
+
+  let html = `
+    <div class="capacity-conflict-section">
+      <div class="capacity-conflict-title">Capacity Issues</div>
+      <div class="capacity-conflict-main">
+        ${conflict.message}
+      </div>
+  `;
+
+  if (unscheduledTasks.length) {
+    unscheduledTasks.forEach(task => {
+      html += `
+        <div class="capacity-task">
+          <div class="capacity-task-title">${task.title}</div>
+          <div class="capacity-task-meta">
+            Due: ${task.due_date} | Priority: ${task.priority} | Effort: ${task.effort_level}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
 
 // ---------- Dashboard Constants ----------
 const totalTasksEl = document.getElementById("totalTasks");

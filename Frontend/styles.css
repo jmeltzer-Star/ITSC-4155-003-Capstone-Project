@@ -1333,13 +1333,6 @@ button {
 	background: #fef2f2;
   }
   
-  .conflict-item {
-	margin-top: 12px;
-	padding: 12px;
-	border: 1px solid #fecaca;
-	border-radius: 10px;
-	background: #fff7f7;
-  }
 
   .momentum-orb-card {
 	overflow: hidden;
@@ -3648,19 +3641,27 @@ button {
 	line-height: 1.5;
   }
   
-  .conflict-item {
-	padding: 12px 0;
-	border-bottom: 1px solid rgba(255,255,255,0.08);
+  /* Fix invisible conflict box */
+.conflict-item {
+	background: rgba(255, 80, 80, 0.12);  /* soft red */
+	border: 1px solid rgba(255, 80, 80, 0.3);
+	border-radius: 10px;
+	padding: 12px 14px;
+	margin-top: 10px;
   }
   
-  .conflict-item:last-child {
-	border-bottom: none;
-  }
-  
+  /* Main conflict text */
   .conflict-item p {
-	margin: 0 0 8px;
-	color: rgba(255,255,255,0.82);
-	line-height: 1.6;
+	color: #ff6b6b;   /* visible red */
+	font-weight: 500;
+	margin: 0;
+  }
+  
+  /* Secondary text (like suggestion) */
+  .conflict-item .conflict-meta {
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.85rem;
+	margin-top: 6px;
   }
   
   /* =========================
@@ -5223,4 +5224,123 @@ button {
   
   .calendar-event-tooltip div + div {
 	margin-top: 3px;
+  }
+
+  /* Capacity Conflict Container */
+.capacity-conflict-section {
+	margin-top: 16px;
+	padding: 16px;
+	border-radius: 12px;
+	background: rgba(255, 80, 80, 0.08);
+	border: 1px solid rgba(255, 80, 80, 0.25);
+  }
+  
+  /* Header */
+  .capacity-conflict-title {
+	font-weight: 600;
+	font-size: 0.95rem;
+	color: #ff6b6b;
+	margin-bottom: 10px;
+  }
+  
+  /* Main alert */
+  .capacity-conflict-main {
+	background: rgba(255, 100, 100, 0.15);
+	border: 1px solid rgba(255, 100, 100, 0.35);
+	color: #ff4d4d;
+	padding: 10px 12px;
+	border-radius: 8px;
+	font-weight: 500;
+	margin-bottom: 12px;
+  }
+  
+  /* Individual unscheduled task */
+  .capacity-task {
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	padding: 10px 12px;
+	margin-bottom: 8px;
+	transition: 0.2s ease;
+  }
+  
+  .capacity-task:hover {
+	background: rgba(255, 255, 255, 0.08);
+  }
+  
+  /* Task title */
+  .capacity-task-title {
+	font-weight: 600;
+	color: #ffffff;
+	margin-bottom: 4px;
+  }
+  
+  /* Metadata */
+  .capacity-task-meta {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.6);
+  }
+  #alertsContent {
+	display: grid;
+	gap: 18px;
+  }
+  
+  .alert-group {
+	margin-top: 4px;
+  }
+  
+  .alert-group-header {
+	margin-bottom: 10px;
+  }
+  
+  .alert-group-header h2 {
+	margin: 0;
+  }
+  
+  .alert-card {
+	border-radius: 16px;
+	padding: 16px 18px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(10px);
+  }
+  
+  .alert-card-danger {
+	background: rgba(255, 95, 95, 0.10);
+	border-color: rgba(255, 95, 95, 0.22);
+  }
+  
+  .alert-card-warning {
+	background: rgba(255, 166, 77, 0.10);
+	border-color: rgba(255, 166, 77, 0.22);
+  }
+  
+  .alert-card-title {
+	font-size: 1rem;
+	font-weight: 700;
+	margin-bottom: 12px;
+	color: #fff;
+  }
+  
+  .alert-list {
+	display: grid;
+	gap: 10px;
+  }
+  
+  .alert-item {
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 12px;
+	padding: 12px 14px;
+  }
+  
+  .alert-item-title {
+	font-weight: 600;
+	color: #fff;
+	margin-bottom: 4px;
+  }
+  
+  .alert-item-meta {
+	font-size: 0.84rem;
+	color: rgba(255, 255, 255, 0.68);
+	line-height: 1.4;
   }
